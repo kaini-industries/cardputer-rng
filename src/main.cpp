@@ -18,7 +18,7 @@ void setup() {
   M5Cardputer.Display.setFont(&fonts::FreeMonoBold9pt7b);
   M5Cardputer.Display.setCursor(0, 0);
 
-  FloatBytes floatData;
+  FloatBytes floatData; // ??
 }
 
 void loop() {
@@ -34,14 +34,12 @@ void loop() {
   imuData = M5.Imu.getImuData();
 
   SHA256 pulesHash = SHA256();
+
   String aHash = "";
 
-  FloatBytes floatData;
-
   String floatTest = "";
-  
-  FloatBytes floatData; // TEST
-  byte floatDataArr[] = {}; // TEST
+  FloatBytes floatData; // ?? NEEDS RESET?
+  byte floatDataArr[] = {}; // ?? NEEDS RESET?
 
   FloatBytes accelX;
   // uint8_t accelXArr[] = {};
@@ -79,6 +77,7 @@ void loop() {
 
     floatTest += "0x";
     byteValue += "0x";
+    
     if (floatData.b_array[i] < 0x10) {
       floatTest += "0";
       byteValue += "0";
@@ -88,14 +87,16 @@ void loop() {
     byteValue += String(floatData.b_array[i]);
 
     // floatDataArr[i] = (byte) byteValue; // FIX THIS
+    floatDataArr[i] = (byte) floatData.b_array[i]; // FIX THIS OR CHECK FOR ZERO BYTES
   }
 
   M5Cardputer.Display.setCursor(0, 20);
-  M5Cardputer.Display.print(String(floatTest));
+  // M5Cardputer.Display.print(String(floatTest));
+  // M5Cardputer.Display.print(floatDataArr); // NO
 
-  /*
-  uint8_t data[3] = {0x16, 0xF4, 0x00}; // Example: 5876 = 0x16F4, fill as needed
-  pulesHash.update(data, sizeof(data));
+  // uint8_t data[3] = {0x16, 0xF4, 0x00}; // Example: 5876 = 0x16F4, fill as needed
+  pulesHash.reset();
+  pulesHash.update(floatDataArr, sizeof(floatDataArr));
   uint8_t hash[32];
   pulesHash.finalize(hash, sizeof(hash));
   for (int i = 0; i < sizeof(hash); i++) {
@@ -105,7 +106,10 @@ void loop() {
   }
   M5Cardputer.Display.setCursor(0, 20);
   M5Cardputer.Display.print(String(aHash));
-  */
+
+  // RESETS
+  pulesHash.reset();
+  // floatDataArr[] = {};
 
   /*
   bool isCharging = M5Cardputer.Power.isCharging();
