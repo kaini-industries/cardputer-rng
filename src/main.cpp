@@ -46,50 +46,42 @@ void loop() {
 
   M5.Imu.update();
   imuData = M5.Imu.getImuData();
-  String allImuDataStr = "";
 
   FloatBytes accelX;
   accelX.f_val = imuData.accel.x;
   std::string accelXString = std::to_string(accelX.f_val);
   // uint8_t accelXArr[] = {};
-  byte accelXArr[] = {};
+  // byte accelXArr[] = {};
 
   FloatBytes gyroX;
   gyroX.f_val = imuData.gyro.x;
   std::string gyroXString = std::to_string(gyroX.f_val);
   // uint8_t gyroXArr[] = {};
-  byte gyroXArr[] = {};
+  // byte gyroXArr[] = {};
 
   FloatBytes accelY;
   accelY.f_val = imuData.gyro.x;
   std::string accelYString = std::to_string(accelY.f_val);
   // uint8_t accelYArr[] = {};
-  byte accelYArr[] = {};
+  // byte accelYArr[] = {};
 
   FloatBytes gyroY;
   gyroY.f_val = imuData.gyro.y;
   std::string gyroYString = std::to_string(gyroY.f_val);
   // uint8_t gyroYArr[] = {};
-  byte gyroYArr[] = {};
+  // byte gyroYArr[] = {};
 
   FloatBytes accelZ;
   accelZ.f_val = imuData.accel.y;
   std::string accelZString = std::to_string(accelZ.f_val);
   // uint8_t accelZArr[] = {};
-  byte accelZArr[] = {};
+  // byte accelZArr[] = {};
 
   FloatBytes gyroZ;
   gyroZ.f_val = imuData.gyro.z;
   std::string gyroZString = std::to_string(gyroZ.f_val);
   // uint8_t gyroZArr[] = {};
-  byte gyroZArr[] = {};
-
-  accelX.f_val = imuData.accel.x;
-  gyroX.f_val = imuData.gyro.x;
-  accelY.f_val = imuData.accel.y;
-  gyroY.f_val = imuData.gyro.y;
-  accelZ.f_val = imuData.accel.z;
-  gyroZ.f_val = imuData.gyro.z;
+  // byte gyroZArr[] = {};
 
   std::string allImuDataStr =
     accelXString +
