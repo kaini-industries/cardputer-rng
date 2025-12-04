@@ -106,7 +106,7 @@ void loop() {
   uint8_t hash[hashMachine.HASH_SIZE];
   // uint8_t hash[32]; // ??
   hashMachine.update((const uint8_t*) cAllImuDataStdStr, strlen(cAllImuDataStdStr)); // Feed the data, nom nom
-  hashMachine.finalize(hash, sizeof(hash)); // Finalize and get the hash
+  hashMachine.finalize(hash, sizeof(hash));
   for (size_t i = 0; i < hashMachine.HASH_SIZE; i++) {
     // M5Cardputer.Display.setCursor(0, 20);
     // M5Cardputer.Display.print(hash[i], HEX); // Print each byte in hex
@@ -123,11 +123,6 @@ void loop() {
   M5Cardputer.Display.setCursor(0, 60);
   M5Cardputer.Display.print(String(entropy));
 
-  /* // CHARGING DEMO
-  bool isCharging = M5Cardputer.Power.isCharging();
-  int batteryLevel = M5Cardputer.Power.getBatteryLevel();
-  int batteryVoltage = M5Cardputer.Power.getBatteryVoltage();
-  */
-
+  // MAIN PULSE DELAY
   delay(1500);
 }
