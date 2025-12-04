@@ -39,9 +39,10 @@ void loop() {
 
   M5Cardputer.update();
 
+  // SIMPLE RANDOM
   // int number = random(0, 9);
   // M5Cardputer.Display.setCursor(0, 0);
-  // M5Cardputer.Display.print(String(number)+" PULSE");
+  // M5Cardputer.Display.print(String(number));
 
   M5.Imu.update();
   imuData = M5.Imu.getImuData();
@@ -104,7 +105,6 @@ void loop() {
   M5Cardputer.Display.print(String(cAllImuDataStdStr));
 
   uint8_t hash[hashMachine.HASH_SIZE];
-  // uint8_t hash[32]; // ??
   hashMachine.update((const uint8_t*) cAllImuDataStdStr, strlen(cAllImuDataStdStr)); // Feed the data, nom nom
   hashMachine.finalize(hash, sizeof(hash));
   for (size_t i = 0; i < hashMachine.HASH_SIZE; i++) {
