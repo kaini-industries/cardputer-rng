@@ -1,9 +1,10 @@
 #include <M5Cardputer.h>
 #include <Crypto.h>
 #include <SHA256.h>
-// #include <RNG.h>
+#include <RNG.h>
 
 SHA256 hashMachine = SHA256();
+String allImuDataStr = "";
 
 m5::imu_data_t imuData;
 
@@ -11,14 +12,8 @@ struct FloatBytes {
   float f_val;
   byte b_array[sizeof(float)]; // sizeof(float) is typically 4 bytes // ??
 };
-/*
-union FloatBytes {
-  float f_val;
-  byte b_array[sizeof(float)]; // sizeof(float) is typically 4 bytes // ??
-};
-*/
 
-String entropy = "";
+String entropy = ""; // FOR LATER...
 
 void setup() {
   auto cfg = M5.config();
@@ -26,6 +21,7 @@ void setup() {
 
   M5.Imu.update();
   imuData = M5.Imu.getImuData();
+  String allImuDataStr = "";
 
   // randomSeed(analogRead(0)); // hm...
 
@@ -44,7 +40,6 @@ void loop() {
 
   M5Cardputer.update();
 
-  // WORKS
   // int number = random(0, 9);
   // M5Cardputer.Display.setCursor(0, 0);
   // M5Cardputer.Display.print(String(number)+" PULSE");
@@ -52,35 +47,39 @@ void loop() {
   M5.Imu.update();
   imuData = M5.Imu.getImuData();
 
-  byte floatDataArr[] = {}; // TEST
-
   FloatBytes accelX;
   accelX.f_val = imuData.accel.x;
+  std::string accelXString = std::to_string(accelX.f_val);
   // uint8_t accelXArr[] = {};
   byte accelXArr[] = {};
 
   FloatBytes gyroX;
   gyroX.f_val = imuData.gyro.x;
+  std::string gyroXString = std::to_string(gyroX.f_val);
   // uint8_t gyroXArr[] = {};
   byte gyroXArr[] = {};
 
   FloatBytes accelY;
   accelY.f_val = imuData.gyro.x;
+  std::string accelYString = std::to_string(accelY.f_val);
   // uint8_t accelYArr[] = {};
   byte accelYArr[] = {};
 
   FloatBytes gyroY;
   gyroY.f_val = imuData.gyro.y;
+  std::string gyroYString = std::to_string(gyroY.f_val);
   // uint8_t gyroYArr[] = {};
   byte gyroYArr[] = {};
 
   FloatBytes accelZ;
   accelZ.f_val = imuData.accel.y;
+  std::string accelZString = std::to_string(accelZ.f_val);
   // uint8_t accelZArr[] = {};
   byte accelZArr[] = {};
 
   FloatBytes gyroZ;
   gyroZ.f_val = imuData.gyro.z;
+  std::string gyroZString = std::to_string(gyroZ.f_val);
   // uint8_t gyroZArr[] = {};
   byte gyroZArr[] = {};
 
@@ -91,51 +90,39 @@ void loop() {
   accelZ.f_val = imuData.accel.z;
   gyroZ.f_val = imuData.gyro.z;
 
-  M5Cardputer.Display.setCursor(0, 20);
-  M5Cardputer.Display.print(
-    String(accelX.f_val) +
-    String(gyroX.f_val) +
-    String(accelY.f_val) +
-    String(gyroY.f_val) +
-    String(accelZ.f_val) +
-    String(gyroZ.f_val)
-  );
+  std::string allImuDataStr =
+    accelXString +
+    gyroXString +
+    accelYString +
+    gyroYString +
+    accelZString +
+    gyroZString
+  ;
 
-  // byte myArray[] = {0x10, 0x2A, 0xFF, 0x05}; // TEST ARRAY OF BYTES
-  for (int i = 0; i < sizeof(gyroX.b_array); i++) {
-    // M5Cardputer.Display.setCursor(0, 20);
-    // M5Cardputer.Display.print(String(gyroX.b_array[i]));
-    // delay(1000);
-
-    String byteValue = ""; // TEST
-
-    byteValue += String(gyroX.b_array[i]);
-
-    floatDataArr[i] = (byte) gyroX.b_array[i]; //
-  }
-
-  std::string myStdString = "myStdString"; // TEST
-  const char* cStyleString = myStdString.c_str();  // TEST
-  M5Cardputer.Display.setCursor(0, 20);
-  M5Cardputer.Display.print(String(cStyleString));
+  std::string allImuDataStdStr = allImuDataStr;
+  const char* cAllImuDataStdStr = allImuDataStdStr.c_str();
+  M5Cardputer.Display.setCursor(0, 0);
+  M5Cardputer.Display.print(String(cAllImuDataStdStr));
 
   uint8_t hash[hashMachine.HASH_SIZE];
   // uint8_t hash[32]; // ??
-  hashMachine.update((const uint8_t*) cStyleString, strlen(cStyleString)); // Feed the data
+  hashMachine.update((const uint8_t*) cAllImuDataStdStr, strlen(cAllImuDataStdStr)); // Feed the data, nom nom
   hashMachine.finalize(hash, sizeof(hash)); // Finalize and get the hash
   for (size_t i = 0; i < hashMachine.HASH_SIZE; i++) {
+    // M5Cardputer.Display.setCursor(0, 20);
     // M5Cardputer.Display.print(hash[i], HEX); // Print each byte in hex
+    // delay(1000);
+    entropy += hash[i];
   }
 
   hashMachine.clear();
   hashMachine.reset();
-  // floatDataArr[] = {};
 
-  // int entropyLength = entropy.length();
-  // M5Cardputer.Display.setCursor(0, 20);
-  // M5Cardputer.Display.print(String(entropyLength));
-  // M5Cardputer.Display.setCursor(0, 40);
-  // M5Cardputer.Display.print(String(entropy));
+  int entropyLength = entropy.length();
+  M5Cardputer.Display.setCursor(0, 40);
+  M5Cardputer.Display.print(String(entropyLength));
+  M5Cardputer.Display.setCursor(0, 60);
+  M5Cardputer.Display.print(String(entropy));
 
   /* // CHARGING DEMO
   bool isCharging = M5Cardputer.Power.isCharging();
@@ -143,5 +130,5 @@ void loop() {
   int batteryVoltage = M5Cardputer.Power.getBatteryVoltage();
   */
 
-  delay(1200);
+  delay(1500);
 }
