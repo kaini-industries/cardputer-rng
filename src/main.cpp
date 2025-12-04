@@ -4,7 +4,6 @@
 #include <RNG.h>
 
 SHA256 hashMachine = SHA256();
-String allImuDataStr = "";
 
 m5::imu_data_t imuData;
 
@@ -21,9 +20,6 @@ void setup() {
 
   M5.Imu.update();
   imuData = M5.Imu.getImuData();
-  String allImuDataStr = "";
-
-  // randomSeed(analogRead(0)); // hm...
 
   M5Cardputer.Display.setFont(&fonts::FreeMonoBold9pt7b);
   M5Cardputer.Display.setCursor(0, 0);
@@ -33,19 +29,19 @@ void setup() {
 }
 
 void loop() {
-  SHA256 hashMachine = SHA256();
+  M5Cardputer.update();
+  M5Cardputer.Display.fillScreen(TFT_BLACK);
+
+  M5.Imu.update();
+  imuData = M5.Imu.getImuData();
+
   hashMachine.clear();
   hashMachine.reset();
-
-  M5Cardputer.update();
 
   // SIMPLE RANDOM
   // int number = random(0, 9);
   // M5Cardputer.Display.setCursor(0, 0);
   // M5Cardputer.Display.print(String(number));
-
-  M5.Imu.update();
-  imuData = M5.Imu.getImuData();
 
   FloatBytes accelX;
   accelX.f_val = imuData.accel.x;
@@ -92,29 +88,37 @@ void loop() {
     gyroZString
   ;
 
-  std::string allImuDataStdStr = allImuDataStr;
-  const char* cAllImuDataStdStr = allImuDataStdStr.c_str();
-  M5Cardputer.Display.setCursor(0, 0);
-  M5Cardputer.Display.print(String(cAllImuDataStdStr));
+  const char* cAllImuDataStdStr = allImuDataStr.c_str();
+
+  // M5Cardputer.Display.setCursor(0, 0);
+  // M5Cardputer.Display.print(String(cAllImuDataStdStr));
 
   uint8_t hash[hashMachine.HASH_SIZE];
   hashMachine.update((const uint8_t*) cAllImuDataStdStr, strlen(cAllImuDataStdStr)); // Feed the data, nom nom
   hashMachine.finalize(hash, sizeof(hash));
+
+  String entropyPulse = "";
+
   for (size_t i = 0; i < hashMachine.HASH_SIZE; i++) {
     // M5Cardputer.Display.setCursor(0, 20);
-    // M5Cardputer.Display.print(hash[i], HEX); // Print each byte in hex
+    // M5Cardputer.Display.print(hash[i], HEX);
     // delay(1000);
     entropy += hash[i];
+    entropyPulse += hash[i];
   }
 
   hashMachine.clear();
   hashMachine.reset();
 
   int entropyLength = entropy.length();
-  M5Cardputer.Display.setCursor(0, 40);
-  M5Cardputer.Display.print(String(entropyLength));
-  M5Cardputer.Display.setCursor(0, 60);
-  M5Cardputer.Display.print(String(entropy));
+  // M5Cardputer.Display.setCursor(0, 0);
+  // M5Cardputer.Display.print(String(entropyLength));
+
+  M5Cardputer.Display.setCursor(0, 0);
+  M5Cardputer.Display.print(entropyPulse);
+
+  // M5Cardputer.Display.setCursor(0, 60);
+  // M5Cardputer.Display.print(String(entropy));
 
   // MAIN PULSE DELAY
   delay(1500);
