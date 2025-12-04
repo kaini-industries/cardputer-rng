@@ -46,6 +46,7 @@ void loop() {
 
   M5.Imu.update();
   imuData = M5.Imu.getImuData();
+  String allImuDataStr = "";
 
   FloatBytes accelX;
   accelX.f_val = imuData.accel.x;
