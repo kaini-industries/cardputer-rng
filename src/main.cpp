@@ -10,10 +10,10 @@ m5::imu_data_t imuData;
 
 struct FloatBytes {
   float f_val;
-  byte b_array[sizeof(float)]; // sizeof(float) is typically 4 bytes // ??
+  byte b_array[sizeof(float)];
 };
 
-String entropy = ""; // FOR LATER...
+String entropy = "";
 
 void setup() {
   auto cfg = M5.config();
@@ -33,7 +33,6 @@ void setup() {
 }
 
 void loop() {
-  // SHA256 object
   SHA256 hashMachine = SHA256();
   hashMachine.clear();
   hashMachine.reset();
