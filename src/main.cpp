@@ -2,17 +2,23 @@
 #include <Crypto.h>
 #include <SHA256.h>
 #include <RNG.h>
+#include <TransistorNoiseSource.h>
+#include <SPI.h>
 
 SHA256 hashMachine = SHA256();
-
+TransistorNoiseSource noise(G3);
 m5::imu_data_t imuData;
+String entropy = "";
+
+// RNG TEST VARS
+bool haveKey = false;
+byte key[32];
+//
 
 struct FloatBytes {
   float f_val;
   byte b_array[sizeof(float)];
 };
-
-String entropy = "";
 
 void setup() {
   auto cfg = M5.config();
@@ -21,11 +27,14 @@ void setup() {
   M5.Imu.update();
   imuData = M5.Imu.getImuData();
 
-  M5Cardputer.Display.setFont(&fonts::FreeMonoBold9pt7b);
-  M5Cardputer.Display.setCursor(0, 0);
+  RNG.begin("CardputerRNG v1");
+  RNG.addNoiseSource(noise);
 
   hashMachine.clear();
   hashMachine.reset();
+
+  M5Cardputer.Display.setFont(&fonts::FreeMonoBold9pt7b);
+  M5Cardputer.Display.setCursor(0, 0);
 }
 
 void loop() {
@@ -37,6 +46,8 @@ void loop() {
 
   hashMachine.clear();
   hashMachine.reset();
+
+  RNG.loop();
 
   // SIMPLE RANDOM
   // int number = random(0, 9);
@@ -116,9 +127,27 @@ void loop() {
 
   M5Cardputer.Display.setCursor(0, 0);
   M5Cardputer.Display.print(entropyPulse);
+  // M5Cardputer.Display.printf(entropyPulse.c_str());
 
   // M5Cardputer.Display.setCursor(0, 60);
   // M5Cardputer.Display.print(String(entropy));
+
+  // RNG TEST LOGIC
+  if (!haveKey && RNG.available(sizeof(key))) {
+    RNG.rand(key, sizeof(key));
+    haveKey = true;
+  }
+  if (!haveKey) {
+    M5Cardputer.Display.setCursor(0, 80);
+    M5Cardputer.Display.print(0);
+  }
+  if (haveKey) {
+    M5Cardputer.Display.setCursor(0, 80);
+    M5Cardputer.Display.print(1);
+    M5Cardputer.Display.setCursor(0, 80);
+    M5Cardputer.Display.printf("%s", (char*) key);
+  }
+  //
 
   // MAIN PULSE DELAY
   delay(1500);
