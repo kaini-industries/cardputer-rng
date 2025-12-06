@@ -17,14 +17,18 @@ m5::imu_data_t imuData;
 String entropy = "";
 
 const int KEY_SIZE = 256;
+
 bool keyReady = false;
 bool keyRngHashReady = false;
 
 byte rngKey[KEY_SIZE];
 
-uint8_t hash[hashMachine.HASH_SIZE];
+// uint8_t hash[hashMachine.HASH_SIZE];
+uint8_t hash[KEY_SIZE];
 // uint8_t hash[256];
-uint8_t rngHash[rngHashMachine.HASH_SIZE];
+
+// uint8_t rngHash[rngHashMachine.HASH_SIZE];
+uint8_t rngHash[KEY_SIZE];
 // uint8_t rngHash[256];
 
 String rngHashStr = "";
@@ -232,6 +236,6 @@ void loop() {
 
   // MAIN DELAY
   if (!keyRngHashReady) {
-    delay(0);
+    delay(10);
   }
 }
