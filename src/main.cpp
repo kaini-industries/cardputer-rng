@@ -14,6 +14,8 @@ SHA256 hashMachine = SHA256();
 SHA256 rngHashMachine = SHA256();
 TransistorNoiseSource noise1(G3);
 TransistorNoiseSource noise2(G4);
+TransistorNoiseSource noise3(G5);
+TransistorNoiseSource noise4(G6);
 m5::imu_data_t imuData;
 String entropy = "";
 
@@ -73,6 +75,8 @@ void setup() {
   RNG.begin("CardputerRNG v1");
   RNG.addNoiseSource(noise1);
   RNG.addNoiseSource(noise2);
+  RNG.addNoiseSource(noise3);
+  RNG.addNoiseSource(noise4);
 
   hashMachine.clear();
   hashMachine.reset();
