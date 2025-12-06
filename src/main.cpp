@@ -197,6 +197,8 @@ void loop() {
   if (!keyReady) {
     M5Cardputer.Display.setCursor(0, 0);
     M5Cardputer.Display.printf("%s", (char*) "Gathering entropy...");
+    M5Cardputer.Display.setCursor(0, 20);
+    M5Cardputer.Display.printf("%s", (char*) "Get jiggling!");
   }
   if (keyReady && !keyRngHashReady) {
     // // M5Cardputer.Display.fillScreen(TFT_BLACK);
