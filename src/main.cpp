@@ -4,20 +4,58 @@
 #include <RNG.h>
 #include <TransistorNoiseSource.h>
 #include <SPI.h>
+#include <iostream>
+#include <iomanip>
+#include <cstdint>
+#include <cstring>
+#include <vector>
 
 SHA256 hashMachine = SHA256();
+SHA256 rngHashMachine = SHA256();
 TransistorNoiseSource noise(G3);
 m5::imu_data_t imuData;
 String entropy = "";
 
-// RNG TEST VARS
-bool haveKey = false;
-byte key[32];
-//
+const int KEY_SIZE = 256;
+bool keyReady = false;
+bool keyRngHashReady = false;
+
+byte rngKey[KEY_SIZE];
+
+uint8_t hash[hashMachine.HASH_SIZE];
+// uint8_t hash[256];
+uint8_t rngHash[rngHashMachine.HASH_SIZE];
+// uint8_t rngHash[256];
+
+String rngHashStr = "";
+
+std::vector<uint8_t> doubleToHexBytes(double x) {
+  // std::vector<byte> byte_return;
+  std::vector<uint8_t> byte_return;
+  uint8_t bytes[8];
+  std::memcpy(bytes, &x, sizeof(double));
+
+  for (int i = 7; i >= 0; --i) {
+    byte_return.push_back(bytes[i]);
+    // byte_return.push_back(static_cast<int>(bytes[i]));
+    /*
+    std::cout << std::hex << std::uppercase
+              << std::setw(2) << std::setfill('0')
+              << static_cast<int>(bytes[i]);
+    */
+  }
+
+  return byte_return;
+}
 
 struct FloatBytes {
   float f_val;
   byte b_array[sizeof(float)];
+};
+
+struct DoubleBytes {
+  double d_val;
+  byte d_array[sizeof(double)];
 };
 
 void setup() {
@@ -32,6 +70,8 @@ void setup() {
 
   hashMachine.clear();
   hashMachine.reset();
+  rngHashMachine.clear();
+  rngHashMachine.reset();
 
   M5Cardputer.Display.setFont(&fonts::FreeMonoBold9pt7b);
   M5Cardputer.Display.setCursor(0, 0);
@@ -39,13 +79,15 @@ void setup() {
 
 void loop() {
   M5Cardputer.update();
-  M5Cardputer.Display.fillScreen(TFT_BLACK);
+  // M5Cardputer.Display.fillScreen(TFT_BLACK);
 
   M5.Imu.update();
   imuData = M5.Imu.getImuData();
 
   hashMachine.clear();
   hashMachine.reset();
+  rngHashMachine.clear();
+  rngHashMachine.reset();
 
   RNG.loop();
 
@@ -54,63 +96,81 @@ void loop() {
   // M5Cardputer.Display.setCursor(0, 0);
   // M5Cardputer.Display.print(String(number));
 
+  /* // TEST STIR WITH SIGNED DOUBLE
+  double testDouble = -0.123;
+  const std::vector<uint8_t> vectorOfBytes = doubleToHexBytes(testDouble);
+  for (uint8_t b : vectorOfBytes) {
+    // std::string s_str = std::to_string(b);
+    // M5Cardputer.Display.setCursor(0, 0);
+    // M5Cardputer.Display.printf(s_str.c_str());
+    // delay(500);
+    uint8_t stirValue = b;
+    const uint8_t *stirPointer = &stirValue;
+    RNG.stir(stirPointer, sizeof(stirValue));
+  }
+  */
+
   FloatBytes accelX;
   accelX.f_val = imuData.accel.x;
   std::string accelXString = std::to_string(accelX.f_val);
-  // uint8_t accelXArr[] = {};
-  // byte accelXArr[] = {};
+  // uint8_t accelXArr[] = {}; // byte accelXArr[] = {};
+  DoubleBytes accelX_d;
+  accelX_d.d_val = imuData.accel.x;
+  std::string accelX_dString = std::to_string(accelX_d.d_val);
+  // uint8_t accelX_dArr[] = {}; // byte accelX_dArr[] = {};
 
   FloatBytes gyroX;
   gyroX.f_val = imuData.gyro.x;
   std::string gyroXString = std::to_string(gyroX.f_val);
-  // uint8_t gyroXArr[] = {};
-  // byte gyroXArr[] = {};
+  // uint8_t gyroXArr[] = {}; // byte gyroXArr[] = {};
+  DoubleBytes gyroX_d;
+  gyroX_d.d_val = imuData.gyro.x;
+  std::string gyroX_dString = std::to_string(gyroX_d.d_val);
+  // uint8_t gyroX_dArr[] = {}; // byte gyroX_dArr[] = {};
 
   FloatBytes accelY;
   accelY.f_val = imuData.gyro.x;
   std::string accelYString = std::to_string(accelY.f_val);
-  // uint8_t accelYArr[] = {};
-  // byte accelYArr[] = {};
+  // uint8_t accelYArr[] = {}; // byte accelYArr[] = {};
+  DoubleBytes accelY_d;
+  accelY_d.d_val = imuData.gyro.x;
+  std::string accelY_dString = std::to_string(accelY_d.d_val);
+  // uint8_t accelY_dArr[] = {}; // byte accelY_dArr[] = {};
 
   FloatBytes gyroY;
   gyroY.f_val = imuData.gyro.y;
   std::string gyroYString = std::to_string(gyroY.f_val);
-  // uint8_t gyroYArr[] = {};
-  // byte gyroYArr[] = {};
-
-  FloatBytes accelZ;
-  accelZ.f_val = imuData.accel.y;
-  std::string accelZString = std::to_string(accelZ.f_val);
-  // uint8_t accelZArr[] = {};
-  // byte accelZArr[] = {};
-
-  FloatBytes gyroZ;
-  gyroZ.f_val = imuData.gyro.z;
-  std::string gyroZString = std::to_string(gyroZ.f_val);
-  // uint8_t gyroZArr[] = {};
-  // byte gyroZArr[] = {};
+  // uint8_t gyroYArr[] = {}; // byte gyroYArr[] = {};
+  DoubleBytes gyroY_d;
+  gyroY_d.d_val = imuData.gyro.y;
+  std::string gyroY_dString = std::to_string(gyroY_d.d_val);
+  // uint8_t gyroY_dArr[] = {}; // byte gyroY_dArr[] = {};
 
   std::string allImuDataStr =
     accelXString +
     gyroXString +
     accelYString +
-    gyroYString +
-    accelZString +
-    gyroZString
+    gyroYString
   ;
 
   const char* cAllImuDataStdStr = allImuDataStr.c_str();
-
   // M5Cardputer.Display.setCursor(0, 0);
   // M5Cardputer.Display.print(String(cAllImuDataStdStr));
 
-  uint8_t hash[hashMachine.HASH_SIZE];
-  hashMachine.update((const uint8_t*) cAllImuDataStdStr, strlen(cAllImuDataStdStr)); // Feed the data, nom nom
-  hashMachine.finalize(hash, sizeof(hash));
+  std::vector<uint8_t> allImuDataVector(allImuDataStr.begin(), allImuDataStr.end());
+  uint8_t *allImuUint8_t = &allImuDataVector[0];
+  const uint8_t *stirPointer = allImuUint8_t;
+  RNG.stir(stirPointer, sizeof(allImuUint8_t));
 
+  // M5Cardputer.Display.setCursor(0, 0);
+  // M5Cardputer.Display.printf("%s", (char*) allImuUint8_t);
+
+  hashMachine.update((const uint8_t*) cAllImuDataStdStr, strlen(cAllImuDataStdStr));
+  hashMachine.finalize(hash, sizeof(hash));
+  
   String entropyPulse = "";
 
-  for (size_t i = 0; i < hashMachine.HASH_SIZE; i++) {
+  for (size_t i = 0; i < hashMachine.HASH_SIZE; i++) { // ??
     // M5Cardputer.Display.setCursor(0, 20);
     // M5Cardputer.Display.print(hash[i], HEX);
     // delay(1000);
@@ -124,31 +184,52 @@ void loop() {
   int entropyLength = entropy.length();
   // M5Cardputer.Display.setCursor(0, 0);
   // M5Cardputer.Display.print(String(entropyLength));
-
-  M5Cardputer.Display.setCursor(0, 0);
-  M5Cardputer.Display.print(entropyPulse);
+  // M5Cardputer.Display.setCursor(0, 0);
+  // M5Cardputer.Display.print(entropyPulse);
   // M5Cardputer.Display.printf(entropyPulse.c_str());
-
   // M5Cardputer.Display.setCursor(0, 60);
   // M5Cardputer.Display.print(String(entropy));
 
-  // RNG TEST LOGIC
-  if (!haveKey && RNG.available(sizeof(key))) {
-    RNG.rand(key, sizeof(key));
-    haveKey = true;
+  if (!keyReady && RNG.available(sizeof(rngKey))) {
+    RNG.rand(rngKey, sizeof(rngKey));
+    keyReady = true;
   }
-  if (!haveKey) {
-    M5Cardputer.Display.setCursor(0, 80);
-    M5Cardputer.Display.print(0);
+  if (!keyReady) {
+    M5Cardputer.Display.setCursor(0, 0);
+    M5Cardputer.Display.printf("%s", (char*) "Gathering entropy...");
   }
-  if (haveKey) {
-    M5Cardputer.Display.setCursor(0, 80);
-    M5Cardputer.Display.print(1);
-    M5Cardputer.Display.setCursor(0, 80);
-    M5Cardputer.Display.printf("%s", (char*) key);
-  }
-  //
+  if (keyReady && !keyRngHashReady) {
+    // // M5Cardputer.Display.fillScreen(TFT_BLACK);
+    // M5Cardputer.Display.setCursor(0, 0);
+    // M5Cardputer.Display.printf("%s", (char*) "Key generated: ");
+    // M5Cardputer.Display.setCursor(0, 20);
+    // M5Cardputer.Display.printf("%s", (char*) key);
 
-  // MAIN PULSE DELAY
-  delay(1500);
+    rngHashMachine.clear();
+    rngHashMachine.reset();
+
+    rngHashMachine.update((const uint8_t*) rngKey, sizeof(rngKey));
+    rngHashMachine.finalize(rngHash, sizeof(rngHash));
+
+    for (size_t i = 0; i < rngHashMachine.HASH_SIZE; i++) {
+      rngHashStr += rngHash[i];
+    }
+
+    keyRngHashReady = true;
+  }
+  if (keyRngHashReady) {
+    // M5Cardputer.Display.fillScreen(TFT_BLACK);
+
+    M5Cardputer.Display.setCursor(0, 0);
+    M5Cardputer.Display.printf("%s", (char*) "Hash generated:      ");
+
+    M5Cardputer.Display.setCursor(0, 20);
+    M5Cardputer.Display.print(rngHashStr);
+    // M5Cardputer.Display.printf("%s", (char*) rngHash);
+  }
+
+  // MAIN DELAY
+  if (!keyRngHashReady) {
+    delay(0);
+  }
 }
