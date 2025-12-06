@@ -12,7 +12,8 @@
 
 SHA256 hashMachine = SHA256();
 SHA256 rngHashMachine = SHA256();
-TransistorNoiseSource noise(G3);
+TransistorNoiseSource noise1(G3);
+TransistorNoiseSource noise2(G4);
 m5::imu_data_t imuData;
 String entropy = "";
 
@@ -70,7 +71,8 @@ void setup() {
   imuData = M5.Imu.getImuData();
 
   RNG.begin("CardputerRNG v1");
-  RNG.addNoiseSource(noise);
+  RNG.addNoiseSource(noise1);
+  RNG.addNoiseSource(noise2);
 
   hashMachine.clear();
   hashMachine.reset();
@@ -194,15 +196,15 @@ void loop() {
   // M5Cardputer.Display.setCursor(0, 60);
   // M5Cardputer.Display.print(String(entropy));
 
-  if (!keyReady && RNG.available(sizeof(rngKey))) {
-    RNG.rand(rngKey, sizeof(rngKey));
-    keyReady = true;
-  }
   if (!keyReady) {
     M5Cardputer.Display.setCursor(0, 0);
     M5Cardputer.Display.printf("%s", (char*) "Gathering entropy...");
     M5Cardputer.Display.setCursor(0, 20);
     M5Cardputer.Display.printf("%s", (char*) "Get jiggling!");
+  }
+  if (!keyReady && RNG.available(sizeof(rngKey))) {
+    RNG.rand(rngKey, sizeof(rngKey));
+    keyReady = true;
   }
   if (keyReady && !keyRngHashReady) {
     // // M5Cardputer.Display.fillScreen(TFT_BLACK);
