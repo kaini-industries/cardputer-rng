@@ -20,10 +20,9 @@ m5::imu_data_t imuData;
 String entropy = "";
 
 const int KEY_SIZE = 256;
-
 bool keyReady = false;
 bool keyRngHashReady = false;
-
+bool resetRng = false;
 byte rngKey[KEY_SIZE];
 
 // uint8_t hash[hashMachine.HASH_SIZE];
@@ -37,8 +36,7 @@ uint8_t rngHash[KEY_SIZE];
 String rngHashStr = "";
 
 std::vector<uint8_t> doubleToHexBytes(double x) {
-  // std::vector<byte> byte_return;
-  std::vector<uint8_t> byte_return;
+  std::vector<uint8_t> byte_return; // std::vector<byte> byte_return;
   uint8_t bytes[8];
   std::memcpy(bytes, &x, sizeof(double));
 
@@ -73,6 +71,7 @@ void setup() {
   imuData = M5.Imu.getImuData();
 
   RNG.begin("CardputerRNG v1");
+
   RNG.addNoiseSource(noise1);
   RNG.addNoiseSource(noise2);
   RNG.addNoiseSource(noise3);
@@ -98,6 +97,11 @@ void loop() {
   hashMachine.reset();
   rngHashMachine.clear();
   rngHashMachine.reset();
+
+  if (resetRng) {
+    RNG.begin("CardputerRNG v1");
+    resetRng = false;
+  }
 
   RNG.loop();
 
@@ -180,7 +184,7 @@ void loop() {
   
   String entropyPulse = "";
 
-  for (size_t i = 0; i < hashMachine.HASH_SIZE; i++) { // ??
+  for (size_t i = 0; i < hashMachine.HASH_SIZE; i++) { // USE KEY_SIZE ??
     // M5Cardputer.Display.setCursor(0, 20);
     // M5Cardputer.Display.print(hash[i], HEX);
     // delay(1000);
@@ -223,7 +227,7 @@ void loop() {
     rngHashMachine.update((const uint8_t*) rngKey, sizeof(rngKey));
     rngHashMachine.finalize(rngHash, sizeof(rngHash));
 
-    for (size_t i = 0; i < rngHashMachine.HASH_SIZE; i++) {
+    for (size_t i = 0; i < rngHashMachine.HASH_SIZE; i++) { // USE KEY_SIZE ??
       rngHashStr += rngHash[i];
     }
 
@@ -238,10 +242,29 @@ void loop() {
     M5Cardputer.Display.setCursor(0, 20);
     M5Cardputer.Display.print(rngHashStr);
     // M5Cardputer.Display.printf("%s", (char*) rngHash);
+
+    M5Cardputer.Display.setCursor(0, 120);
+    M5Cardputer.Display.printf("%s", (char*) "Press enter to reset.");
+
+    // LISTEN FOR KEYBOARD INPUT
+    if (M5Cardputer.Keyboard.isChange()) {
+      if (M5Cardputer.Keyboard.isPressed()) {
+        Keyboard_Class::KeysState status = M5Cardputer.Keyboard.keysState();
+
+        if (status.enter) {
+          M5Cardputer.Display.fillScreen(TFT_BLACK);
+          keyReady = false;
+          keyRngHashReady = false;
+          rngHashStr = "";
+          resetRng = true;
+          RNG.destroy();
+        }
+      }
+    }
   }
 
   // MAIN DELAY
   if (!keyRngHashReady) {
-    delay(10);
+    // delay(0);
   }
 }
