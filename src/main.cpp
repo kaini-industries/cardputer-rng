@@ -16,6 +16,7 @@ TransistorNoiseSource noise1(G3);
 TransistorNoiseSource noise2(G4);
 TransistorNoiseSource noise3(G5);
 TransistorNoiseSource noise4(G6);
+TransistorNoiseSource noise5(G13);
 m5::imu_data_t imuData;
 String entropy = "";
 
@@ -76,6 +77,7 @@ void setup() {
   RNG.addNoiseSource(noise2);
   RNG.addNoiseSource(noise3);
   RNG.addNoiseSource(noise4);
+  RNG.addNoiseSource(noise5);
 
   hashMachine.clear();
   hashMachine.reset();
