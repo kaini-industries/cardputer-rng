@@ -25,6 +25,7 @@ bool keyReady = false;
 bool keyRngHashReady = false;
 bool resetRng = false;
 byte rngKey[KEY_SIZE];
+bool serialOutput = false;
 
 // uint8_t hash[hashMachine.HASH_SIZE];
 uint8_t hash[KEY_SIZE];
@@ -86,6 +87,10 @@ void setup() {
 
   M5Cardputer.Display.setFont(&fonts::FreeMonoBold9pt7b);
   M5Cardputer.Display.setCursor(0, 0);
+
+  Serial.begin(115200);
+  delay(10);
+  Serial.println("Cardputer ADV Ready...");
 }
 
 void loop() {
@@ -234,6 +239,7 @@ void loop() {
     }
 
     keyRngHashReady = true;
+    serialOutput = true;
   }
   if (keyRngHashReady) {
     // M5Cardputer.Display.fillScreen(TFT_BLACK);
@@ -263,6 +269,13 @@ void loop() {
         }
       }
     }
+  }
+
+  if (keyRngHashReady && serialOutput) {
+    // Serial.println(rngHashStr);
+    Serial.println(rngHashStr);
+
+    serialOutput = false;
   }
 
   // MAIN DELAY
