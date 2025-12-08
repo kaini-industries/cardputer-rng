@@ -28,15 +28,18 @@ bool resetRng = false;
 byte rngKey[KEY_SIZE];
 bool serialOutput = false;
 
+// MUST BE DEFINED PER LOOP ??
 // uint8_t hash[hashMachine.HASH_SIZE];
-uint8_t hash[KEY_SIZE];
+// uint8_t hash[KEY_SIZE]; // RESET PER PULSE ??
 // uint8_t hash[256];
 
+// MUST BE DEFINED PER LOOP ??
 // uint8_t rngHash[rngHashMachine.HASH_SIZE];
-uint8_t rngHash[KEY_SIZE];
+// uint8_t rngHash[KEY_SIZE]; // RESET PER PULSE ??
 // uint8_t rngHash[256];
 
-String rngHashStr = "";
+// MUST BE DEFINED PER LOOP ??
+// String rngHashStr = "";
 
 std::vector<uint8_t> doubleToHexBytes(double x) {
   std::vector<uint8_t> byte_return; // std::vector<byte> byte_return;
@@ -81,11 +84,6 @@ void setup() {
   RNG.addNoiseSource(noise4);
   RNG.addNoiseSource(noise5);
 
-  hashMachine.clear();
-  hashMachine.reset();
-  rngHashMachine.clear();
-  rngHashMachine.reset();
-
   M5Cardputer.Display.setFont(&fonts::FreeMonoBold9pt7b);
   M5Cardputer.Display.setCursor(0, 0);
 
@@ -96,10 +94,14 @@ void setup() {
 
 void loop() {
   M5Cardputer.update();
-  // M5Cardputer.Display.fillScreen(TFT_BLACK);
 
   M5.Imu.update();
   imuData = M5.Imu.getImuData();
+
+  uint8_t hash[KEY_SIZE];
+
+  uint8_t rngHash[KEY_SIZE]; // RESET PER PULSE ??
+  String rngHashStr = ""; // RESET PER PULSE ??
 
   hashMachine.clear();
   hashMachine.reset();
@@ -191,14 +193,14 @@ void loop() {
   // M5Cardputer.Display.setCursor(0, 0);
   // M5Cardputer.Display.printf("%s", (char*) allImuUint8_t);
   const uint8_t *stirPointer = allImuUint8_t;
-  RNG.stir(stirPointer, sizeof(allImuUint8_t));
+  // RNG.stir(stirPointer, sizeof(allImuUint8_t));
 
   hashMachine.update((const uint8_t*) cAllImuDataStdStr, strlen(cAllImuDataStdStr));
   hashMachine.finalize(hash, sizeof(hash));
   
   String entropyPulse = "";
 
-  for (size_t i = 0; i < hashMachine.HASH_SIZE; i++) { // USE KEY_SIZE ??
+  for (size_t i = 0; i < hashMachine.HASH_SIZE; i++) {
     // M5Cardputer.Display.setCursor(0, 20);
     // M5Cardputer.Display.print(hash[i], HEX);
     // delay(1000);
@@ -215,8 +217,8 @@ void loop() {
   if (!keyReady) {
     M5Cardputer.Display.setCursor(0, 0);
     M5Cardputer.Display.printf("%s", (char*) "Gathering entropy...");
-    M5Cardputer.Display.setCursor(0, 20);
-    M5Cardputer.Display.printf("%s", (char*) "Get jiggling!");
+    // M5Cardputer.Display.setCursor(0, 20);
+    // M5Cardputer.Display.printf("%s", (char*) "Get jiggling!");
   }
   if (!keyReady && RNG.available(sizeof(rngKey))) {
     RNG.rand(rngKey, sizeof(rngKey));
@@ -229,14 +231,16 @@ void loop() {
     // M5Cardputer.Display.setCursor(0, 20);
     // M5Cardputer.Display.printf("%s", (char*) key);
 
-    rngHashMachine.clear();
-    rngHashMachine.reset();
+    rngHashMachine.clear(); // ??
+    rngHashMachine.reset(); // ??
 
     rngHashMachine.update((const uint8_t*) rngKey, sizeof(rngKey));
     rngHashMachine.finalize(rngHash, sizeof(rngHash));
 
-    for (size_t i = 0; i < rngHashMachine.HASH_SIZE; i++) { // USE KEY_SIZE ??
+    for (size_t i = 0; i < rngHashMachine.HASH_SIZE; i++) {
       rngHashStr += rngHash[i];
+      // rngHashStr += rngHash[i]+ ", "; // ??
+      // rngHashStr += String(hash[i], HEX) + " "; // ??
     }
 
     keyRngHashReady = true;
@@ -248,7 +252,6 @@ void loop() {
 
     M5Cardputer.Display.setCursor(0, 20);
     M5Cardputer.Display.print(rngHashStr);
-    // M5Cardputer.Display.printf("%s", (char*) rngHash); // 
 
     M5Cardputer.Display.setCursor(0, 120);
     M5Cardputer.Display.printf("%s", (char*) "Press enter to reset.");
@@ -271,8 +274,22 @@ void loop() {
   }
 
   if (keyRngHashReady && serialOutput) {
-    // sSerial.print(rngHashStr);
-    Serial.println(rngHashStr);
+    Serial.print(rngHashStr);
+    Serial.println();
+    
+    // Print rngKey as hex values
+    for (size_t i = 0; i < sizeof(rngKey); ++i) {
+      Serial.printf("%02X", rngKey[i]);
+      if (i < sizeof(rngKey) - 1) Serial.print(" ");
+    }
+    Serial.println();
+
+    // Print rngHas as hex values
+    for (size_t i = 0; i < rngHashMachine.HASH_SIZE; ++i) {
+      Serial.printf("%02X", rngHash[i]);
+      if (i < sizeof(rngHash) - 1) Serial.print(" ");
+    }
+    Serial.println();
 
     serialOutput = false;
   }
