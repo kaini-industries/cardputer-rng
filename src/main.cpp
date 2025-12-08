@@ -18,7 +18,8 @@ TransistorNoiseSource noise3(G5);
 TransistorNoiseSource noise4(G6);
 TransistorNoiseSource noise5(G13);
 m5::imu_data_t imuData;
-String entropy = "";
+
+String entropy = ""; //
 
 const int KEY_SIZE = 256;
 bool keyReady = false;
@@ -180,11 +181,10 @@ void loop() {
 
   std::vector<uint8_t> allImuDataVector(allImuDataStr.begin(), allImuDataStr.end());
   uint8_t *allImuUint8_t = &allImuDataVector[0];
-  const uint8_t *stirPointer = allImuUint8_t;
-  RNG.stir(stirPointer, sizeof(allImuUint8_t));
-
   // M5Cardputer.Display.setCursor(0, 0);
   // M5Cardputer.Display.printf("%s", (char*) allImuUint8_t);
+  const uint8_t *stirPointer = allImuUint8_t;
+  RNG.stir(stirPointer, sizeof(allImuUint8_t));
 
   hashMachine.update((const uint8_t*) cAllImuDataStdStr, strlen(cAllImuDataStdStr));
   hashMachine.finalize(hash, sizeof(hash));
@@ -203,13 +203,7 @@ void loop() {
   hashMachine.reset();
 
   int entropyLength = entropy.length();
-  // M5Cardputer.Display.setCursor(0, 0);
-  // M5Cardputer.Display.print(String(entropyLength));
-  // M5Cardputer.Display.setCursor(0, 0);
-  // M5Cardputer.Display.print(entropyPulse);
-  // M5Cardputer.Display.printf(entropyPulse.c_str());
-  // M5Cardputer.Display.setCursor(0, 60);
-  // M5Cardputer.Display.print(String(entropy));
+  // String(entropyLength) // entropyPulse // entropyPulse.c_str() // String(entropy)
 
   if (!keyReady) {
     M5Cardputer.Display.setCursor(0, 0);
@@ -242,14 +236,12 @@ void loop() {
     serialOutput = true;
   }
   if (keyRngHashReady) {
-    // M5Cardputer.Display.fillScreen(TFT_BLACK);
-
     M5Cardputer.Display.setCursor(0, 0);
     M5Cardputer.Display.printf("%s", (char*) "Hash generated:      ");
 
     M5Cardputer.Display.setCursor(0, 20);
     M5Cardputer.Display.print(rngHashStr);
-    // M5Cardputer.Display.printf("%s", (char*) rngHash);
+    // M5Cardputer.Display.printf("%s", (char*) rngHash); // 
 
     M5Cardputer.Display.setCursor(0, 120);
     M5Cardputer.Display.printf("%s", (char*) "Press enter to reset.");
@@ -272,13 +264,12 @@ void loop() {
   }
 
   if (keyRngHashReady && serialOutput) {
-    // Serial.println(rngHashStr);
+    // sSerial.print(rngHashStr);
     Serial.println(rngHashStr);
 
     serialOutput = false;
   }
 
-  // MAIN DELAY
   if (!keyRngHashReady) {
     // delay(0);
   }
