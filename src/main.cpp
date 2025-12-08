@@ -168,6 +168,13 @@ void loop() {
   std::string gyroY_dString = std::to_string(gyroY_d.d_val);
   // uint8_t gyroY_dArr[] = {}; // byte gyroY_dArr[] = {};
 
+  /*
+  hashMachine.update((uint8_t*)&accelX.f_val, sizeof(float));
+  hashMachine.update((uint8_t*)&gyroX.f_val, sizeof(float));
+  hashMachine.update((uint8_t*)&accelY.f_val, sizeof(float));
+  hashMachine.update((uint8_t*)&gyroY.f_val, sizeof(float));
+  */
+
   std::string allImuDataStr =
     accelXString +
     gyroXString +
