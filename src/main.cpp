@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <cstring>
 #include <vector>
+#include <bitset>
 
 SHA256 hashMachine = SHA256();
 SHA256 rngHashMachine = SHA256();
@@ -18,8 +19,6 @@ TransistorNoiseSource noise3(G5);
 TransistorNoiseSource noise4(G6);
 TransistorNoiseSource noise5(G13);
 m5::imu_data_t imuData;
-
-String entropy = ""; //
 
 const int KEY_SIZE = 256;
 bool keyReady = false;
