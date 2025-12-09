@@ -37,6 +37,13 @@ struct DoubleBytes {
   byte d_array[sizeof(double)];
 };
 
+std::string hexToBinaryStr(const std::string& hex) {
+    // Convert hex string -> integer
+    unsigned int value = std::stoul(hex, nullptr, 16);
+    // Convert integer -> 8-bit binary
+    return std::bitset<8>(value).to_string();
+}
+
 void setup() {
   auto cfg = M5.config();
   M5Cardputer.begin(cfg, true);
@@ -182,22 +189,23 @@ void loop() {
   }
 
   if (keyRngHashReady && serialOutput) {
-    Serial.print(rngHashStr);
-    Serial.println();
+    // Serial.print(rngHashStr);
     
     // Print rngKey as hex values
     for (size_t i = 0; i < sizeof(rngKey); ++i) {
-      Serial.printf("%02X", rngKey[i]);
-      if (i < sizeof(rngKey) - 1) Serial.print(" ");
+      // Serial.printf("%02X", rngKey[i]);
+      // if (i < sizeof(rngKey) - 1) Serial.print(" ");
+      std::string binStr = std::bitset<8>(rngKey[i]).to_string();
+      Serial.print(binStr.c_str());
     }
     Serial.println();
 
     // Print rngHash as hex values
     for (size_t i = 0; i < rngHashMachine.HASH_SIZE; ++i) {
-      Serial.printf("%02X", rngHash[i]);
-      if (i < sizeof(rngHash) - 1) Serial.print(" ");
+      // Serial.printf("%02X", rngHash[i]);
+      // if (i < sizeof(rngHash) - 1) Serial.print(" ");
     }
-    Serial.println();
+    // Serial.println();
 
     serialOutput = false;
   }
