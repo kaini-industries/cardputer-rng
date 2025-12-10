@@ -197,14 +197,20 @@ void loop() {
   }
 
   if (keyRngHashReady && serialOutput) {
-    // Serial.printf(rngHashStr);
-    Serial.printf("%s", rngHashStr.c_str());
-    Serial.println();
-    Serial.print(bigBinStr);
-    Serial.println();
+    // Serial.printf("%s", rngHashStr.c_str());
+
+    // Serial.printf(rngHashStr); // 
+    // Serial.println();
+    // Serial.print(bigBinStr);
+    // Serial.println();
 
     // Print rngKey as hex values
     for (size_t i = 0; i < sizeof(rngKey); ++i) {
+      int keyItemInt = static_cast<int>(rngKey[i]);
+      int normalizedKeyItemInt = floor((static_cast<float>(keyItemInt) / 256.0f) * 10.0f);
+      std::string keyItemIntStr = std::to_string(normalizedKeyItemInt);
+      Serial.printf("%s", keyItemIntStr.c_str());
+
       // Serial.printf("%02X", rngKey[i]);
       // if (i < sizeof(rngKey) - 1) Serial.print(" ");
       // std::string binStr = std::bitset<8>(rngKey[i]).to_string();
