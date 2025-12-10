@@ -37,13 +37,6 @@ struct DoubleBytes {
   byte d_array[sizeof(double)];
 };
 
-std::string hexToBinaryStr(const std::string& hex) {
-    // Convert hex string -> integer
-    unsigned int value = std::stoul(hex, nullptr, 16);
-    // Convert integer -> 8-bit binary
-    return std::bitset<8>(value).to_string();
-}
-
 void setup() {
   auto cfg = M5.config();
   M5Cardputer.begin(cfg, true);
@@ -74,7 +67,10 @@ void loop() {
   imuData = M5.Imu.getImuData();
 
   uint8_t rngHash[KEY_SIZE];
-  String rngHashStr = "";
+  // String rngHashStr = "";
+  std::string rngHashStr = "";
+
+  String bigBinStr = "";
 
   hashMachine.clear();
   hashMachine.reset();
@@ -141,7 +137,7 @@ void loop() {
     M5Cardputer.Display.setCursor(0, 0);
     M5Cardputer.Display.printf("%s", (char*) "Gathering entropy...");
     M5Cardputer.Display.setCursor(0, 20);
-    M5Cardputer.Display.printf("%s", (char*) "Get jiggling!");
+    M5Cardputer.Display.printf("%s", (char*) "Jiggle!");
   }
   if (!keyReady && RNG.available(sizeof(rngKey))) {
     RNG.rand(rngKey, sizeof(rngKey));
@@ -155,18 +151,29 @@ void loop() {
     rngHashMachine.finalize(rngHash, sizeof(rngHash));
 
     for (size_t i = 0; i < rngHashMachine.HASH_SIZE; i++) {
-      rngHashStr += rngHash[i];
+      int itemInt = static_cast<int>(rngHash[i]);
+      int normalizedItemInt = floor((static_cast<float>(itemInt) / 256.0f) * 10.0f);
+
+      std::string delim = ", ";
+      // std::string itemIntStr = std::to_string(itemInt);
+      std::string itemIntStr = std::to_string(normalizedItemInt);
+      // rngHashStr += itemIntStr + delim;
+      rngHashStr += itemIntStr;
+
+      // rngHashStr += rngHash[i]; // Hex style byte
+      bigBinStr += std::bitset<8>(rngKey[i]).to_string().c_str();      
     }
 
     keyRngHashReady = true;
     serialOutput = true;
   }
   if (keyRngHashReady) {
-    M5Cardputer.Display.setCursor(0, 0);
-    M5Cardputer.Display.printf("%s", (char*) "Hash generated:      ");
+    // M5Cardputer.Display.setCursor(0, 0);
+    // M5Cardputer.Display.printf("%s", (char*) "Hash generated:      ");
 
-    M5Cardputer.Display.setCursor(0, 20);
-    M5Cardputer.Display.print(rngHashStr);
+    M5Cardputer.Display.setCursor(0, 0);
+    M5Cardputer.Display.print(rngHashStr.c_str());
+    // M5Cardputer.Display.print(bigBinStr);
 
     M5Cardputer.Display.setCursor(0, 120);
     M5Cardputer.Display.printf("%s", (char*) "Press enter to reset.");
@@ -181,6 +188,7 @@ void loop() {
           keyReady = false;
           keyRngHashReady = false;
           rngHashStr = "";
+          bigBinStr = "";
           resetRng = true;
           RNG.destroy();
         }
@@ -189,14 +197,18 @@ void loop() {
   }
 
   if (keyRngHashReady && serialOutput) {
-    // Serial.print(rngHashStr);
-    
+    // Serial.printf(rngHashStr);
+    Serial.printf("%s", rngHashStr.c_str());
+    Serial.println();
+    Serial.print(bigBinStr);
+    Serial.println();
+
     // Print rngKey as hex values
     for (size_t i = 0; i < sizeof(rngKey); ++i) {
       // Serial.printf("%02X", rngKey[i]);
       // if (i < sizeof(rngKey) - 1) Serial.print(" ");
-      std::string binStr = std::bitset<8>(rngKey[i]).to_string();
-      Serial.print(binStr.c_str());
+      // std::string binStr = std::bitset<8>(rngKey[i]).to_string();
+      // Serial.print(binStr.c_str());
     }
     Serial.println();
 
