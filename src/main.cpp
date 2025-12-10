@@ -210,7 +210,7 @@ void loop() {
       // std::string binStr = std::bitset<8>(rngKey[i]).to_string();
       // Serial.print(binStr.c_str());
     }
-    Serial.println();
+    // Serial.println();
 
     // Print rngHash as hex values
     for (size_t i = 0; i < rngHashMachine.HASH_SIZE; ++i) {
