@@ -67,8 +67,9 @@ void loop() {
   imuData = M5.Imu.getImuData();
 
   uint8_t rngHash[KEY_SIZE];
-  std::string rngHashStr = "";
+  std::string rngStr = "";
   std::string bigBinStr = "";
+  std::string rngHashStr = "";
 
   hashMachine.clear();
   hashMachine.reset();
@@ -144,6 +145,16 @@ void loop() {
   if (keyReady && !keyRngHashReady) {
     // M5Cardputer.Display.fillScreen(TFT_BLACK);
 
+    for (size_t i = 0; i < sizeof(rngKey); ++i) {
+      int keyItemInt = static_cast<int>(rngKey[i]);
+      if (keyItemInt > 249) {
+        continue;
+      }
+      int normalizedKeyItemInt = floor((static_cast<float>(keyItemInt) / 250.0f) * 10.0f);
+      std::string keyItemIntStr = std::to_string(normalizedKeyItemInt);
+      rngStr += keyItemIntStr;
+    }
+
     rngHashMachine.clear(); rngHashMachine.reset();
     rngHashMachine.update((const uint8_t*) rngKey, sizeof(rngKey));
     rngHashMachine.finalize(rngHash, sizeof(rngHash));
@@ -174,8 +185,10 @@ void loop() {
     // M5Cardputer.Display.printf("%s", (char*) "Hash generated:      ");
 
     M5Cardputer.Display.setCursor(0, 0);
-    M5Cardputer.Display.print(rngHashStr.c_str());
-    // M5Cardputer.Display.print(bigBinStr);
+    // M5Cardputer.Display.print(rngStr.c_str());
+    M5Cardputer.Display.print(rngStr.c_str());
+    // M5Cardputer.Display.print(rngHashStr.c_str());
+    // M5Cardputer.Display.print(bigBinStr); // .c_str() IS NOT NEEDED ??
 
     M5Cardputer.Display.setCursor(0, 120);
     M5Cardputer.Display.printf("%s", (char*) "Press enter to reset.");
@@ -189,8 +202,9 @@ void loop() {
           M5Cardputer.Display.fillScreen(TFT_BLACK);
           keyReady = false;
           keyRngHashReady = false;
-          std::string rngHashStr = "";
+          std::string rngStr = "";
           std::string bigBinStr = "";
+          std::string rngHashStr = "";
           resetRng = true;
           RNG.destroy();
         }
@@ -202,7 +216,7 @@ void loop() {
     // Serial.printf("%s", rngHashStr.c_str());
     // Serial.printf("%s", bigBinStr.c_str());
 
-    // Print rngKey as hex values
+    // Serial stream rngKey
     for (size_t i = 0; i < sizeof(rngKey); ++i) {
       int keyItemInt = static_cast<int>(rngKey[i]);
       if (keyItemInt > 249) {
@@ -219,7 +233,7 @@ void loop() {
     }
     // Serial.println();
 
-    // Print rngHash as hex values
+    // Serial stream rngHash
     for (size_t i = 0; i < rngHashMachine.HASH_SIZE; ++i) {
       // Serial.printf("%02X", rngHash[i]);
       // if (i < sizeof(rngHash) - 1) Serial.print(" ");
