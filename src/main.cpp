@@ -67,10 +67,8 @@ void loop() {
   imuData = M5.Imu.getImuData();
 
   uint8_t rngHash[KEY_SIZE];
-  // String rngHashStr = "";
   std::string rngHashStr = "";
-
-  String bigBinStr = "";
+  std::string bigBinStr = "";
 
   hashMachine.clear();
   hashMachine.reset();
@@ -152,16 +150,20 @@ void loop() {
 
     for (size_t i = 0; i < rngHashMachine.HASH_SIZE; i++) {
       int itemInt = static_cast<int>(rngHash[i]);
-      int normalizedItemInt = floor((static_cast<float>(itemInt) / 256.0f) * 10.0f);
+      if (itemInt > 249) {
+        continue;
+      }
+      int normalizedItemInt = floor((static_cast<float>(itemInt) / 250.0f) * 10.0f);
 
       std::string delim = ", ";
-      // std::string itemIntStr = std::to_string(itemInt);
       std::string itemIntStr = std::to_string(normalizedItemInt);
       // rngHashStr += itemIntStr + delim;
       rngHashStr += itemIntStr;
 
+      std::string binStr = std::bitset<8>(rngKey[i]).to_string().c_str();
+      bigBinStr += binStr.c_str() + delim;
+
       // rngHashStr += rngHash[i]; // Hex style byte
-      bigBinStr += std::bitset<8>(rngKey[i]).to_string().c_str();      
     }
 
     keyRngHashReady = true;
@@ -187,8 +189,8 @@ void loop() {
           M5Cardputer.Display.fillScreen(TFT_BLACK);
           keyReady = false;
           keyRngHashReady = false;
-          rngHashStr = "";
-          bigBinStr = "";
+          std::string rngHashStr = "";
+          std::string bigBinStr = "";
           resetRng = true;
           RNG.destroy();
         }
@@ -198,16 +200,15 @@ void loop() {
 
   if (keyRngHashReady && serialOutput) {
     // Serial.printf("%s", rngHashStr.c_str());
-
-    // Serial.printf(rngHashStr); // 
-    // Serial.println();
-    // Serial.print(bigBinStr);
-    // Serial.println();
+    // Serial.printf("%s", bigBinStr.c_str());
 
     // Print rngKey as hex values
     for (size_t i = 0; i < sizeof(rngKey); ++i) {
       int keyItemInt = static_cast<int>(rngKey[i]);
-      int normalizedKeyItemInt = floor((static_cast<float>(keyItemInt) / 256.0f) * 10.0f);
+      if (keyItemInt > 249) {
+        continue;
+      }
+      int normalizedKeyItemInt = floor((static_cast<float>(keyItemInt) / 250.0f) * 10.0f);
       std::string keyItemIntStr = std::to_string(normalizedKeyItemInt);
       Serial.printf("%s", keyItemIntStr.c_str());
 
