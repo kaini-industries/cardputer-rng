@@ -60,6 +60,8 @@ void setup() {
   Serial.println("Cardputer ADV Ready...");
 }
 
+/* LOOP STARTS ////////// */
+/* ////////////////////// */
 void loop() {
   M5Cardputer.update();
 
@@ -70,6 +72,8 @@ void loop() {
   std::string rngStr = "";
   std::string bigBinStr = "";
   std::string rngHashStr = "";
+
+  std::vector<uint8_t> binBuf;
 
   hashMachine.clear();
   hashMachine.reset();
@@ -158,6 +162,10 @@ void loop() {
       std::string binStr = std::bitset<8>(rngKey[i]).to_string().c_str();
       // bigBinStr += binStr.c_str() + delim;
       bigBinStr += binStr.c_str();
+
+      // BUFFER ??
+      // uint8_t* binBufInsert = reinterpret_cast<uint8_t*>(&rngKey[i]);
+      // binBuf.insert(binBuf.end(), binBufInsert, binBufInsert + sizeof(rngKey[i]));
     }
 
     rngHashMachine.clear(); rngHashMachine.reset();
