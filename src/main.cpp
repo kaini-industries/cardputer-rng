@@ -153,6 +153,11 @@ void loop() {
       int normalizedKeyItemInt = floor((static_cast<float>(keyItemInt) / 250.0f) * 10.0f);
       std::string keyItemIntStr = std::to_string(normalizedKeyItemInt);
       rngStr += keyItemIntStr;
+
+      std::string delim = ", ";
+      std::string binStr = std::bitset<8>(rngKey[i]).to_string().c_str();
+      // bigBinStr += binStr.c_str() + delim;
+      bigBinStr += binStr.c_str();
     }
 
     rngHashMachine.clear(); rngHashMachine.reset();
@@ -171,8 +176,10 @@ void loop() {
       // rngHashStr += itemIntStr + delim;
       rngHashStr += itemIntStr;
 
+      /*
       std::string binStr = std::bitset<8>(rngKey[i]).to_string().c_str();
       bigBinStr += binStr.c_str() + delim;
+      */
 
       // rngHashStr += rngHash[i]; // Hex style byte
     }
@@ -213,8 +220,11 @@ void loop() {
   }
 
   if (keyRngHashReady && serialOutput) {
+    Serial.printf("%s", rngStr.c_str());
+    Serial.println();
     // Serial.printf("%s", rngHashStr.c_str());
-    // Serial.printf("%s", bigBinStr.c_str());
+    Serial.printf("%s", bigBinStr.c_str());
+    Serial.println();
 
     // Serial stream rngKey
     for (size_t i = 0; i < sizeof(rngKey); ++i) {
@@ -224,7 +234,7 @@ void loop() {
       }
       int normalizedKeyItemInt = floor((static_cast<float>(keyItemInt) / 250.0f) * 10.0f);
       std::string keyItemIntStr = std::to_string(normalizedKeyItemInt);
-      Serial.printf("%s", keyItemIntStr.c_str());
+      // Serial.printf("%s", keyItemIntStr.c_str());
 
       // Serial.printf("%02X", rngKey[i]);
       // if (i < sizeof(rngKey) - 1) Serial.print(" ");
