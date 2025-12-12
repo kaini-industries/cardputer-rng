@@ -68,7 +68,7 @@ void loop() {
       Keyboard_Class::KeysState status = M5Cardputer.Keyboard.keysState();
 
       if (
-        status.enter // && outputSent
+        true // status.enter // && outputSent
     ) {
         M5Cardputer.Display.fillScreen(TFT_BLACK);
         
@@ -81,6 +81,8 @@ void loop() {
 
         RNG.destroy();
         resetRng = true;
+
+        delay(100);
       }
     }
   }
@@ -161,6 +163,8 @@ void loop() {
 
     outputReady = true;
     serialReady = true;
+
+    delay(100);
   }
 
   if (outputReady && !outputSent) {
@@ -171,6 +175,8 @@ void loop() {
     // M5Cardputer.Display.printf("%s", (char*) "Press enter to reset.");
 
     outputSent = true;
+
+    delay(1200);
   }
 
   if (serialReady && !serialSent) {
@@ -179,5 +185,7 @@ void loop() {
 
     serialReady = false;
     serialSent = true;
+
+    delay(100);
   }
 }
