@@ -63,6 +63,28 @@ void setup() {
 void loop() {
   M5Cardputer.update();
 
+  if (M5Cardputer.Keyboard.isChange()) {
+    if (M5Cardputer.Keyboard.isPressed()) {
+      Keyboard_Class::KeysState status = M5Cardputer.Keyboard.keysState();
+
+      if (
+        status.enter // && outputSent
+    ) {
+        M5Cardputer.Display.fillScreen(TFT_BLACK);
+        
+        std::string rngStr = "";
+        keyReady = false;
+        outputReady = false;
+        outputSent = false;
+        serialReady = false;
+        serialSent = false;
+
+        RNG.destroy();
+        resetRng = true;
+      }
+    }
+  }
+
   M5.Imu.update();
   imuData = M5.Imu.getImuData();
 
@@ -157,25 +179,5 @@ void loop() {
 
     serialReady = false;
     serialSent = true;
-  }
-
-  if (M5Cardputer.Keyboard.isChange()) {
-    if (M5Cardputer.Keyboard.isPressed()) {
-      Keyboard_Class::KeysState status = M5Cardputer.Keyboard.keysState();
-
-      if (status.enter && outputSent) {
-        M5Cardputer.Display.fillScreen(TFT_BLACK);
-        
-        std::string rngStr = "";
-        keyReady = false;
-        outputReady = false;
-        outputSent = false;
-        serialReady = false;
-        serialSent = false;
-
-        RNG.destroy();
-        resetRng = true;
-      }
-    }
   }
 }
