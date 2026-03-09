@@ -302,6 +302,8 @@ void Canvas::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
         if (e2 >= dy) { err += dy; x0 += sx; }
         if (e2 <= dx) { err += dx; y0 += sy; }
     }
+    if (minX < 0) minX = 0;
+    if (minY < 0) minY = 0;
     markDirty({minX, minY,
                (uint16_t)(maxX - minX + 1),
                (uint16_t)(maxY - minY + 1)});

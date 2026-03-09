@@ -192,7 +192,7 @@ public:
 
             // Matrix rain
             char glyph[2] = {0, 0};
-            const char hexChars[] = "0123456789ABCDEF";
+            static const char hexChars[] = "0123456789ABCDEF";
 
             for (int col = 0; col < RAIN_COLS; col++) {
                 int16_t x = col * RAIN_CELL_W;
@@ -325,9 +325,6 @@ void loop() {
     M5.Imu.update();
     imuData = M5.Imu.getImuData();
 
-    hashMachine.clear();
-    hashMachine.reset();
-
     if (resetRng) {
         RNG.begin("CardputerRNG v1");
         resetRng = false;
@@ -335,11 +332,13 @@ void loop() {
 
     RNG.loop();
 
-    // Stir IMU data into entropy pool (bug fix: accelY uses accel.y not gyro.x)
+    // Stir IMU data into entropy pool
     stirFloat(imuData.accel.x);
-    stirFloat(imuData.gyro.x);
     stirFloat(imuData.accel.y);
+    stirFloat(imuData.accel.z);
+    stirFloat(imuData.gyro.x);
     stirFloat(imuData.gyro.y);
+    stirFloat(imuData.gyro.z);
 
     // --- Process key (runs once per generation) ---
     if (keyReady && !keyRngHashReady) {
@@ -347,24 +346,27 @@ void loop() {
         otpStr.clear();
         bigBinStr.clear();
         keyHexStr.clear();
+        keyHexStr.reserve(256 * 3);
+        rngStr.reserve(256);
+        bigBinStr.reserve(256 * 8);
+        otpStr.reserve(256 * 2);
 
+        int digitCount = 0;
         char hexBuf[4];
         for (size_t i = 0; i < sizeof(rngKey); ++i) {
             int keyItemInt = static_cast<int>(rngKey[i]);
             // Build hex string
             snprintf(hexBuf, sizeof(hexBuf), "%02X ", rngKey[i]);
             keyHexStr += hexBuf;
-            // Build normalized digit string
+            // Build normalized digit string + OTP in single pass
             if (keyItemInt > NORM_THRESHOLD - 1) continue;
             int normalized = static_cast<int>(floorf((static_cast<float>(keyItemInt) / NORM_DIVISOR) * NORM_RANGE));
-            rngStr += std::to_string(normalized);
+            char digitChar = '0' + normalized;
+            rngStr += digitChar;
             bigBinStr += std::bitset<8>(rngKey[i]).to_string();
-        }
-
-        // Build OTP string (digits with space every 2 chars)
-        for (size_t i = 0; i < rngStr.size(); i++) {
-            if (i > 0 && i % 2 == 0) otpStr += ' ';
-            otpStr += rngStr[i];
+            if (digitCount > 0 && digitCount % 2 == 0) otpStr += ' ';
+            otpStr += digitChar;
+            digitCount++;
         }
 
         // Compute SHA256 fingerprint for status bar

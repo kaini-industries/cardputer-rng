@@ -83,6 +83,8 @@ public:
         // Semi-transparent overlay (darken background)
         canvas.fill(theme.bgPrimary);
 
+        if (m_bounds.w < 20 || m_bounds.h < 14) return;
+
         // Dialog box
         uint16_t dw = m_bounds.w - 16;
         uint16_t dh = m_bounds.h - 10;

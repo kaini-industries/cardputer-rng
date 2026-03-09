@@ -14,7 +14,7 @@ constexpr uint8_t  COLOR_DEPTH           = 16;   // RGB565
 // Max number of canvases that can be alive at once.
 // The main framebuffer, region canvases, and scratch sprites all
 // draw from this pool. Increase if your app is widget-heavy.
-constexpr uint8_t  MAX_CANVASES          = 12;
+constexpr uint8_t  MAX_CANVASES          = 16;
 
 // ── Widgets ──────────────────────────────────────────────────────
 constexpr uint8_t  MAX_WIDGETS_PER_SCENE = 24;
