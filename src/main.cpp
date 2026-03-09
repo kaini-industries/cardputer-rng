@@ -305,16 +305,20 @@ void setup() {
     RNG.addNoiseSource(noise4);
     RNG.addNoiseSource(noise5);
 
+    // Seed rand() with hardware entropy so rain animation isn't deterministic
+    srand((unsigned)esp_random());
+
     // Setup and push scene, render first frame so UI appears immediately
     rngScene.setup();
     CardGFX::scenes().registerScene(&rngScene);
     CardGFX::scenes().push(&rngScene);
     CardGFX::tick();
 
-    // Wait up to 3s for USB CDC host to connect (after UI is visible)
+    // Wait up to 3s for USB CDC host to connect, keeping animation alive
     uint32_t serialWait = millis();
     while (!Serial && (millis() - serialWait < 3000)) {
-        delay(10);
+        RNG.loop();
+        CardGFX::tick();
     }
 
     Serial.println("BOOT OK");
