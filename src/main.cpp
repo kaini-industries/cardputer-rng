@@ -1,18 +1,20 @@
+#include <cardgfx.h>
 #include <M5Cardputer.h>
 #include <Crypto.h>
 #include <SHA256.h>
 #include <RNG.h>
 #include <TransistorNoiseSource.h>
-#include <SPI.h>
-#include <iostream>
-#include <iomanip>
 #include <cstdint>
 #include <cstring>
-#include <vector>
+#include <cmath>
 #include <bitset>
+#include <string>
+#include <cstdlib>
 
-SHA256 hashMachine = SHA256();
-SHA256 rngHashMachine = SHA256();
+using namespace CardGFX;
+
+// --- Crypto / RNG ---
+SHA256 hashMachine;
 TransistorNoiseSource noise1(G3);
 TransistorNoiseSource noise2(G4);
 TransistorNoiseSource noise3(G5);
@@ -27,241 +29,373 @@ bool resetRng = false;
 byte rngKey[KEY_SIZE];
 bool serialOutput = false;
 
-struct FloatBytes {
-  float f_val;
-  byte b_array[sizeof(float)];
+// Persistent strings (built once per key generation)
+std::string rngStr;
+std::string otpStr;
+std::string bigBinStr;
+std::string keyHexStr;
+
+// --- Display state ---
+enum class DisplayMode { OTP, DIGITS, HEX_VIEW, BINARY };
+DisplayMode displayMode = DisplayMode::OTP;
+static constexpr int NORM_THRESHOLD = 250;
+static constexpr float NORM_DIVISOR = 250.0f;
+static constexpr int NORM_RANGE = 10;
+
+// Matrix rain animation state
+static constexpr int RAIN_COLS = 40;
+static constexpr int RAIN_ROWS = 14;
+static constexpr int RAIN_Y_START = 12;
+static constexpr int RAIN_CELL_W = 6;
+static constexpr int RAIN_CELL_H = 8;
+
+struct RainColumn {
+    int8_t  headRow;
+    uint8_t speed;
+    uint8_t counter;
+    uint8_t length;
 };
+static RainColumn rainCols[RAIN_COLS];
 
-struct DoubleBytes {
-  double d_val;
-  byte d_array[sizeof(double)];
-};
-
-void setup() {
-  auto cfg = M5.config();
-  M5Cardputer.begin(cfg, true);
-
-  M5.Imu.update();
-  imuData = M5.Imu.getImuData();
-
-  RNG.begin("CardputerRNG v1");
-
-  RNG.addNoiseSource(noise1);
-  RNG.addNoiseSource(noise2);
-  RNG.addNoiseSource(noise3);
-  RNG.addNoiseSource(noise4);
-  RNG.addNoiseSource(noise5);
-
-  M5Cardputer.Display.setFont(&fonts::FreeMonoBold9pt7b);
-  M5Cardputer.Display.setCursor(0, 0);
-
-  Serial.begin(115200);
-  delay(10);
-  Serial.println("Cardputer ADV Ready...");
+static void resetRainColumn(RainColumn& col, bool randomStart) {
+    col.headRow = randomStart ? -(rand() % RAIN_ROWS) : -(rand() % 6 + 1);
+    col.speed = 1 + (rand() % 3);
+    col.counter = 0;
+    col.length = 4 + (rand() % 7);
 }
 
-/* LOOP STARTS ////////// */
-/* ////////////////////// */
-void loop() {
-  M5Cardputer.update();
+// --- Helper: hash and stir a float into RNG ---
+static void stirFloat(float value) {
+    uint8_t hash[SHA256::HASH_SIZE];
+    hashMachine.update((uint8_t*)&value, sizeof(float));
+    hashMachine.finalize(hash, sizeof(hash));
+    RNG.stir(hash, sizeof(hash));
+    hashMachine.clear();
+    hashMachine.reset();
+}
 
-  M5.Imu.update();
-  imuData = M5.Imu.getImuData();
+// --- Draw wrapped text using canvas built-in font ---
+static void drawWrappedText(Canvas& canvas, int16_t x, int16_t y,
+                            int16_t maxW, int16_t maxH,
+                            const char* text, uint16_t color, uint8_t scale) {
+    int charW = 6 * scale;  // 5px char + 1px spacing
+    int lineH = 8 * scale;  // 7px char + 1px spacing
+    int cols = maxW / charW;
+    if (cols <= 0) return;
 
-  uint8_t rngHash[KEY_SIZE];
-  std::string rngStr = "";
-  std::string bigBinStr = "";
-  std::string rngHashStr = "";
+    size_t len = strlen(text);
+    char lineBuf[50];
+    int16_t curY = y;
 
-  std::vector<uint8_t> binBuf;
-
-  hashMachine.clear();
-  hashMachine.reset();
-  rngHashMachine.clear();
-  rngHashMachine.reset();
-
-  if (resetRng) {
-    RNG.begin("CardputerRNG v1");
-    resetRng = false;
-  }
-
-  RNG.loop();
-
-  FloatBytes accelX;
-  accelX.f_val = imuData.accel.x;
-  std::string accelXString = std::to_string(accelX.f_val);
-  uint8_t accelXHash[KEY_SIZE];
-  hashMachine.update((uint8_t*)&accelX.f_val, sizeof(float));
-  hashMachine.finalize(accelXHash, sizeof(accelXHash));
-  RNG.stir(accelXHash, sizeof(accelXHash));
-  hashMachine.clear(); hashMachine.reset();
-
-  FloatBytes gyroX;
-  gyroX.f_val = imuData.gyro.x;
-  std::string gyroXString = std::to_string(gyroX.f_val);
-  uint8_t gyroXHash[KEY_SIZE];
-  hashMachine.update((uint8_t*)&gyroX.f_val, sizeof(float));
-  hashMachine.finalize(gyroXHash, sizeof(gyroXHash));
-  RNG.stir(gyroXHash, sizeof(gyroXHash));
-  hashMachine.clear(); hashMachine.reset();
-
-  FloatBytes accelY;
-  accelY.f_val = imuData.gyro.x;
-  std::string accelYString = std::to_string(accelY.f_val);
-  uint8_t accelYHash[KEY_SIZE];
-  hashMachine.update((uint8_t*)&accelY.f_val, sizeof(float));
-  hashMachine.finalize(accelYHash, sizeof(accelYHash));
-  RNG.stir(accelYHash, sizeof(accelYHash));
-  hashMachine.clear(); hashMachine.reset();
-
-  FloatBytes gyroY;
-  gyroY.f_val = imuData.gyro.y;
-  std::string gyroYString = std::to_string(gyroY.f_val);
-  uint8_t gyroYHash[KEY_SIZE];
-  hashMachine.update((uint8_t*)&gyroY.f_val, sizeof(float));
-  hashMachine.finalize(gyroYHash, sizeof(gyroYHash));
-  RNG.stir(gyroYHash, sizeof(gyroYHash));
-  hashMachine.clear(); hashMachine.reset();
-
-  /*
-  // FOR TESTING IMU READS
-  std::string allImuDataStr =
-    accelXString +
-    gyroXString +
-    accelYString +
-    gyroYString
-  ;
-  // const char* cAllImuDataStdStr = allImuDataStr.c_str();
-  // M5Cardputer.Display.setCursor(0, 0);
-  // M5Cardputer.Display.print(String(cAllImuDataStdStr));
-  */
-
-  if (!keyReady) {
-    M5Cardputer.Display.setCursor(0, 0);
-    M5Cardputer.Display.printf("%s", (char*) "Gathering entropy...");
-    // M5Cardputer.Display.setCursor(0, 20);
-    // M5Cardputer.Display.printf("%s", (char*) "Jiggle!");
-  }
-  if (!keyReady && RNG.available(sizeof(rngKey))) {
-    RNG.rand(rngKey, sizeof(rngKey));
-    keyReady = true;
-  }
-  if (keyReady && !keyRngHashReady) {
-    // M5Cardputer.Display.fillScreen(TFT_BLACK);
-
-    for (size_t i = 0; i < sizeof(rngKey); ++i) {
-      int keyItemInt = static_cast<int>(rngKey[i]);
-      if (keyItemInt > 249) {
-        continue;
-      }
-      int normalizedKeyItemInt = floor((static_cast<float>(keyItemInt) / 250.0f) * 10.0f);
-      std::string keyItemIntStr = std::to_string(normalizedKeyItemInt);
-      rngStr += keyItemIntStr;
-
-      std::string delim = ", ";
-      std::string binStr = std::bitset<8>(rngKey[i]).to_string().c_str();
-      // bigBinStr += binStr.c_str() + delim;
-      bigBinStr += binStr.c_str();
-
-      // BUFFER ??
-      // uint8_t* binBufInsert = reinterpret_cast<uint8_t*>(&rngKey[i]);
-      // binBuf.insert(binBuf.end(), binBufInsert, binBufInsert + sizeof(rngKey[i]));
+    for (size_t i = 0; i < len && curY + lineH <= y + maxH; ) {
+        size_t lineLen = (len - i < (size_t)cols) ? (len - i) : (size_t)cols;
+        memcpy(lineBuf, text + i, lineLen);
+        lineBuf[lineLen] = '\0';
+        canvas.drawText(x, curY, lineBuf, color, scale);
+        curY += lineH;
+        i += lineLen;
     }
+}
 
-    rngHashMachine.clear(); rngHashMachine.reset();
-    rngHashMachine.update((const uint8_t*) rngKey, sizeof(rngKey));
-    rngHashMachine.finalize(rngHash, sizeof(rngHash));
+// =====================================================================
+// RNG Scene
+// =====================================================================
 
-    for (size_t i = 0; i < rngHashMachine.HASH_SIZE; i++) {
-      int itemInt = static_cast<int>(rngHash[i]);
-      if (itemInt > 249) {
-        continue;
-      }
-      int normalizedItemInt = floor((static_cast<float>(itemInt) / 250.0f) * 10.0f);
+class RNGScene : public Scene {
+public:
+    StatusBar topBar;
+    Label entropyLabel;
+    Label hintLabel;
 
-      std::string delim = ", ";
-      std::string itemIntStr = std::to_string(normalizedItemInt);
-      // rngHashStr += itemIntStr + delim;
-      rngHashStr += itemIntStr;
+    RNGScene() : Scene("rng") {}
 
-      /*
-      std::string binStr = std::bitset<8>(rngKey[i]).to_string().c_str();
-      bigBinStr += binStr.c_str() + delim;
-      */
+    void setup() {
+        topBar.setBounds({0, 0, SCREEN_W, 11});
+        topBar.setCenter("ENTROPY COLLECTION");
+        topBar.setDrawSeparator(true);
+        addWidget(&topBar);
 
-      // rngHashStr += rngHash[i]; // Hex style byte
-    }
+        entropyLabel.setBounds({0, 24, SCREEN_W, 14});
+        entropyLabel.setText("Shake to gather entropy");
+        entropyLabel.setAlign(Label::Align::Center);
+        entropyLabel.setColor(CardGFX::theme().fgSecondary);
+        addWidget(&entropyLabel);
 
-    keyRngHashReady = true;
-    serialOutput = true;
-  }
-  if (keyRngHashReady) {
-    // M5Cardputer.Display.setCursor(0, 0);
-    // M5Cardputer.Display.printf("%s", (char*) "Hash generated:      ");
+        hintLabel.setBounds({0, 124, SCREEN_W, 11});
+        hintLabel.setText("Jiggle for faster collection");
+        hintLabel.setAlign(Label::Align::Center);
+        hintLabel.setColor(CardGFX::theme().fgSecondary);
+        addWidget(&hintLabel);
 
-    M5Cardputer.Display.setCursor(0, 0);
-    // M5Cardputer.Display.print(rngStr.c_str());
-    M5Cardputer.Display.print(rngStr.c_str());
-    // M5Cardputer.Display.print(rngHashStr.c_str());
-    // M5Cardputer.Display.print(bigBinStr); // .c_str() IS NOT NEEDED ??
-
-    M5Cardputer.Display.setCursor(0, 120);
-    M5Cardputer.Display.printf("%s", (char*) "Press enter to reset.");
-
-    // LISTEN FOR KEYBOARD INPUT
-    if (M5Cardputer.Keyboard.isChange()) {
-      if (M5Cardputer.Keyboard.isPressed()) {
-        Keyboard_Class::KeysState status = M5Cardputer.Keyboard.keysState();
-
-        if (status.enter) {
-          M5Cardputer.Display.fillScreen(TFT_BLACK);
-          keyReady = false;
-          keyRngHashReady = false;
-          std::string rngStr = "";
-          std::string bigBinStr = "";
-          std::string rngHashStr = "";
-          resetRng = true;
-          RNG.destroy();
+        // Initialize rain columns once (persists across key resets)
+        for (int i = 0; i < RAIN_COLS; i++) {
+            resetRainColumn(rainCols[i], true);
         }
-      }
     }
-  }
 
-  if (keyRngHashReady && serialOutput) {
-    Serial.printf("%s", rngStr.c_str());
-    Serial.println();
-    // Serial.printf("%s", rngHashStr.c_str());
-    Serial.printf("%s", bigBinStr.c_str());
-    Serial.println();
-
-    // Serial stream rngKey
-    for (size_t i = 0; i < sizeof(rngKey); ++i) {
-      int keyItemInt = static_cast<int>(rngKey[i]);
-      if (keyItemInt > 249) {
-        continue;
-      }
-      int normalizedKeyItemInt = floor((static_cast<float>(keyItemInt) / 250.0f) * 10.0f);
-      std::string keyItemIntStr = std::to_string(normalizedKeyItemInt);
-      // Serial.printf("%s", keyItemIntStr.c_str());
-
-      // Serial.printf("%02X", rngKey[i]);
-      // if (i < sizeof(rngKey) - 1) Serial.print(" ");
-      // std::string binStr = std::bitset<8>(rngKey[i]).to_string();
-      // Serial.print(binStr.c_str());
+    void onEnter() override {
+        setGatheringState();
     }
-    // Serial.println();
 
-    // Serial stream rngHash
-    for (size_t i = 0; i < rngHashMachine.HASH_SIZE; ++i) {
-      // Serial.printf("%02X", rngHash[i]);
-      // if (i < sizeof(rngHash) - 1) Serial.print(" ");
+    void onTick(uint32_t dt_ms) override {
+        if (!keyReady) {
+            // Advance rain columns
+            for (int i = 0; i < RAIN_COLS; i++) {
+                rainCols[i].counter++;
+                if (rainCols[i].counter >= rainCols[i].speed) {
+                    rainCols[i].headRow++;
+                    rainCols[i].counter = 0;
+                    if (rainCols[i].headRow > RAIN_ROWS + rainCols[i].length) {
+                        resetRainColumn(rainCols[i], false);
+                    }
+                }
+            }
+            // Check for actual key readiness
+            if (RNG.available(sizeof(rngKey))) {
+                RNG.rand(rngKey, sizeof(rngKey));
+                keyReady = true;
+            }
+            topBar.markDirty();
+        }
     }
-    // Serial.println();
 
-    serialOutput = false;
-  }
+    bool onInput(const InputEvent& event) override {
+        if (!event.isDown()) return false;
 
-  if (!keyRngHashReady) {
-    // delay(0);
-  }
+        if (keyRngHashReady) {
+            if (event.key == Key::ENTER) {
+                keyReady = false;
+                keyRngHashReady = false;
+                resetRng = true;
+                displayMode = DisplayMode::OTP;
+                RNG.destroy();
+                setGatheringState();
+                return true;
+            }
+            if (event.key == Key::SPACE) {
+                switch (displayMode) {
+                    case DisplayMode::OTP:      displayMode = DisplayMode::DIGITS;   break;
+                    case DisplayMode::DIGITS:   displayMode = DisplayMode::HEX_VIEW; break;
+                    case DisplayMode::HEX_VIEW: displayMode = DisplayMode::BINARY;   break;
+                    case DisplayMode::BINARY:   displayMode = DisplayMode::OTP;      break;
+                }
+                updateKeyDisplayWidgets();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void onDrawOverlay(Canvas& fb, const Theme& theme) override {
+        if (!keyReady) {
+            fb.fillRect(0, 12, SCREEN_W, SCREEN_H - 12, theme.bgPrimary);
+
+            // Matrix rain
+            char glyph[2] = {0, 0};
+            const char hexChars[] = "0123456789ABCDEF";
+
+            for (int col = 0; col < RAIN_COLS; col++) {
+                int16_t x = col * RAIN_CELL_W;
+                int head = rainCols[col].headRow;
+                int len = rainCols[col].length;
+
+                for (int d = 0; d <= len; d++) {
+                    int row = head - d;
+                    if (row < 0 || row >= RAIN_ROWS) continue;
+
+                    int16_t y = RAIN_Y_START + row * RAIN_CELL_H;
+                    glyph[0] = hexChars[rand() % 16];
+
+                    uint8_t brightness;
+                    if (d == 0) {
+                        brightness = 255;
+                    } else {
+                        brightness = 200 - (d * 180 / len);
+                    }
+                    uint16_t color = HAL::rgb565(d == 0 ? brightness / 2 : 0, brightness, 0);
+                    fb.drawText(x, y, glyph, color, 1);
+                }
+            }
+
+        }
+
+        if (keyRngHashReady) {
+            // Clear content area to remove stale gathering-phase pixels
+            fb.fillRect(0, 12, SCREEN_W, SCREEN_H - 23, theme.bgPrimary);
+
+            switch (displayMode) {
+                case DisplayMode::OTP:
+                    drawWrappedText(fb, 4, 14, SCREEN_W - 8, 108,
+                                    otpStr.c_str(), theme.accent, 1);
+                    break;
+                case DisplayMode::DIGITS:
+                    drawWrappedText(fb, 4, 14, SCREEN_W - 8, 108,
+                                    rngStr.c_str(), theme.accent, 1);
+                    break;
+                case DisplayMode::HEX_VIEW:
+                    drawWrappedText(fb, 4, 14, SCREEN_W - 8, 108,
+                                    keyHexStr.c_str(), theme.fgPrimary, 1);
+                    break;
+                case DisplayMode::BINARY:
+                    drawWrappedText(fb, 2, 14, SCREEN_W - 4, 108,
+                                    bigBinStr.c_str(), theme.success, 1);
+                    break;
+            }
+        }
+    }
+
+    void setGatheringState() {
+        topBar.setLeft("");
+        topBar.setCenter("ENTROPY COLLECTION");
+        topBar.setRight("");
+        entropyLabel.setVisible(true);
+        hintLabel.setVisible(false);
+    }
+
+    void setKeyReadyState(const uint8_t* hash = nullptr) {
+        topBar.setCenter("KEY GENERATED");
+        if (hash) {
+            char fp[10];
+            snprintf(fp, sizeof(fp), "%02X%02X%02X%02X", hash[0], hash[1], hash[2], hash[3]);
+            topBar.setLeft(fp);
+        }
+        entropyLabel.setVisible(false);
+        hintLabel.setText("[ENT]Reset [SPC]View");
+        hintLabel.setVisible(true);
+        updateKeyDisplayWidgets();
+    }
+
+    void updateKeyDisplayWidgets() {
+        switch (displayMode) {
+            case DisplayMode::OTP:      topBar.setRight("OTP");    break;
+            case DisplayMode::DIGITS:   topBar.setRight("DIGITS"); break;
+            case DisplayMode::HEX_VIEW: topBar.setRight("HEX");    break;
+            case DisplayMode::BINARY:   topBar.setRight("BINARY"); break;
+        }
+        topBar.markDirty();
+        hintLabel.markDirty();
+    }
+
+};
+
+// =====================================================================
+// Globals
+// =====================================================================
+
+RNGScene rngScene;
+
+// =====================================================================
+// Setup & Loop
+// =====================================================================
+
+void setup() {
+    if (!CardGFX::init(1, 128)) {
+        while (true) delay(1000);  // Can't print — serial not ready yet
+    }
+
+    // Initialize IMU
+    M5.Imu.update();
+    imuData = M5.Imu.getImuData();
+
+    // Initialize RNG
+    RNG.begin("CardputerRNG v1");
+    RNG.addNoiseSource(noise1);
+    RNG.addNoiseSource(noise2);
+    RNG.addNoiseSource(noise3);
+    RNG.addNoiseSource(noise4);
+    RNG.addNoiseSource(noise5);
+
+    // Setup and push scene, render first frame so UI appears immediately
+    rngScene.setup();
+    CardGFX::scenes().registerScene(&rngScene);
+    CardGFX::scenes().push(&rngScene);
+    CardGFX::tick();
+
+    // Wait up to 3s for USB CDC host to connect (after UI is visible)
+    uint32_t serialWait = millis();
+    while (!Serial && (millis() - serialWait < 3000)) {
+        delay(10);
+    }
+
+    Serial.println("BOOT OK");
+}
+
+void loop() {
+    // --- IMU + RNG (runs every frame regardless of scene) ---
+    M5.Imu.update();
+    imuData = M5.Imu.getImuData();
+
+    hashMachine.clear();
+    hashMachine.reset();
+
+    if (resetRng) {
+        RNG.begin("CardputerRNG v1");
+        resetRng = false;
+    }
+
+    RNG.loop();
+
+    // Stir IMU data into entropy pool (bug fix: accelY uses accel.y not gyro.x)
+    stirFloat(imuData.accel.x);
+    stirFloat(imuData.gyro.x);
+    stirFloat(imuData.accel.y);
+    stirFloat(imuData.gyro.y);
+
+    // --- Process key (runs once per generation) ---
+    if (keyReady && !keyRngHashReady) {
+        rngStr.clear();
+        otpStr.clear();
+        bigBinStr.clear();
+        keyHexStr.clear();
+
+        char hexBuf[4];
+        for (size_t i = 0; i < sizeof(rngKey); ++i) {
+            int keyItemInt = static_cast<int>(rngKey[i]);
+            // Build hex string
+            snprintf(hexBuf, sizeof(hexBuf), "%02X ", rngKey[i]);
+            keyHexStr += hexBuf;
+            // Build normalized digit string
+            if (keyItemInt > NORM_THRESHOLD - 1) continue;
+            int normalized = static_cast<int>(floorf((static_cast<float>(keyItemInt) / NORM_DIVISOR) * NORM_RANGE));
+            rngStr += std::to_string(normalized);
+            bigBinStr += std::bitset<8>(rngKey[i]).to_string();
+        }
+
+        // Build OTP string (digits with space every 2 chars)
+        for (size_t i = 0; i < rngStr.size(); i++) {
+            if (i > 0 && i % 2 == 0) otpStr += ' ';
+            otpStr += rngStr[i];
+        }
+
+        // Compute SHA256 fingerprint for status bar
+        uint8_t rngHash[SHA256::HASH_SIZE];
+        hashMachine.clear();
+        hashMachine.reset();
+        hashMachine.update((const uint8_t*)rngKey, sizeof(rngKey));
+        hashMachine.finalize(rngHash, sizeof(rngHash));
+
+        keyRngHashReady = true;
+        serialOutput = true;
+        rngScene.setKeyReadyState(rngHash);
+    }
+
+    // --- CardGFX frame (input, tick, draw, push to screen) ---
+    CardGFX::tick();
+
+    // --- Serial output (once per key generation) ---
+    if (keyRngHashReady && serialOutput) {
+        Serial.println("--- KEY (OTP) ---");
+        Serial.println(otpStr.c_str());
+        Serial.println("--- KEY (normalized digits) ---");
+        Serial.println(rngStr.c_str());
+        Serial.println("--- KEY (binary) ---");
+        Serial.println(bigBinStr.c_str());
+        Serial.println("--- KEY (raw hex) ---");
+        for (size_t i = 0; i < sizeof(rngKey); ++i) {
+            Serial.printf("%02X", rngKey[i]);
+            if ((i + 1) % 32 == 0) Serial.println();
+        }
+        Serial.println();
+        serialOutput = false;
+    }
 }
