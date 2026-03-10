@@ -8,7 +8,6 @@ Hardware random number generator and key display for the M5Stack Cardputer.
 - **5 transistor noise sources** on GPIO pins G3, G4, G5, G6, G13
 - **IMU entropy mixing** -- accelerometer and gyroscope data hashed into the entropy pool
 - **4 display modes** -- OTP pairs, normalized digits, hex dump, binary
-- **Matrix rain animation** during entropy collection
 - **SHA256 key fingerprint** shown in the status bar
 - **Serial output** of generated keys for external logging
 
