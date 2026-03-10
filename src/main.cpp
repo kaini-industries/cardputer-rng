@@ -40,7 +40,7 @@ enum class DisplayMode { OTP, DIGITS, HEX_VIEW, BINARY };
 DisplayMode displayMode = DisplayMode::OTP;
 static constexpr int NORM_THRESHOLD = 250;
 static constexpr float NORM_DIVISOR = 250.0f;
-static constexpr int NORM_RANGE = 10;
+static constexpr int NORM_RANGE = 50;
 
 // Matrix rain animation state
 static constexpr int RAIN_COLS = 40;
@@ -355,22 +355,26 @@ void loop() {
         bigBinStr.reserve(256 * 8);
         otpStr.reserve(256 * 2);
 
-        int digitCount = 0;
+        int pairCount = 0;
         char hexBuf[4];
+        char otpBuf[4];
         for (size_t i = 0; i < sizeof(rngKey); ++i) {
             int keyItemInt = static_cast<int>(rngKey[i]);
             // Build hex string
             snprintf(hexBuf, sizeof(hexBuf), "%02X ", rngKey[i]);
             keyHexStr += hexBuf;
-            // Build normalized digit string + OTP in single pass
+            // Build normalized OTP pair (00-49) directly from each byte
             if (keyItemInt > NORM_THRESHOLD - 1) continue;
-            int normalized = static_cast<int>(floorf((static_cast<float>(keyItemInt) / NORM_DIVISOR) * NORM_RANGE));
-            char digitChar = '0' + normalized;
-            rngStr += digitChar;
+            int pairValue = static_cast<int>(floorf((static_cast<float>(keyItemInt) / NORM_DIVISOR) * NORM_RANGE));
             bigBinStr += std::bitset<8>(rngKey[i]).to_string();
-            if (digitCount > 0 && digitCount % 2 == 0) otpStr += ' ';
-            otpStr += digitChar;
-            digitCount++;
+            // Feed individual digits into rngStr for DIGITS mode
+            rngStr += ('0' + pairValue / 10);
+            rngStr += ('0' + pairValue % 10);
+            // Build OTP string as space-separated 2-digit pairs
+            if (pairCount > 0) otpStr += ' ';
+            snprintf(otpBuf, sizeof(otpBuf), "%02d", pairValue);
+            otpStr += otpBuf;
+            pairCount++;
         }
 
         // Compute SHA256 fingerprint for status bar
