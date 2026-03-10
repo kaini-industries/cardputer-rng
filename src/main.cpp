@@ -10,8 +10,12 @@
 #include <bitset>
 #include <string>
 #include <cstdlib>
+#include "ble_printer.h"
 
 using namespace CardGFX;
+
+// --- BLE Printer ---
+BlePrinter printer;
 
 // --- Crypto / RNG ---
 SHA256 hashMachine;
@@ -182,6 +186,14 @@ public:
                 updateKeyDisplayWidgets();
                 return true;
             }
+            if (event.key == 'p' || event.key == 'P') {
+                if (printer.isReady()) {
+                    printer.print(otpStr.c_str());
+                } else if (printer.state() == BlePrinter::State::Idle) {
+                    printer.scanAndConnect();
+                }
+                return true;
+            }
         }
         return false;
     }
@@ -241,6 +253,16 @@ public:
                                     bigBinStr.c_str(), theme.success, 1);
                     break;
             }
+
+            // Printer status overlay
+            const char* printerStatus = printer.statusText();
+            if (printerStatus) {
+                // Draw status centered above the hint bar
+                int16_t sw = strlen(printerStatus) * 6;
+                int16_t sx = (SCREEN_W - sw) / 2;
+                fb.fillRect(sx - 2, 112, sw + 4, 10, theme.bgPrimary);
+                fb.drawText(sx, 112, printerStatus, theme.fgSecondary, 1);
+            }
         }
     }
 
@@ -260,7 +282,7 @@ public:
             topBar.setLeft(fp);
         }
         entropyLabel.setVisible(false);
-        hintLabel.setText("[ENT]Reset [SPC]View");
+        hintLabel.setText("[ENT]Reset [SPC]View [P]rint");
         hintLabel.setVisible(true);
         updateKeyDisplayWidgets();
     }
@@ -320,6 +342,9 @@ void setup() {
         RNG.loop();
         CardGFX::tick();
     }
+
+    // Initialize BLE printer support
+    printer.init();
 
     Serial.println("BOOT OK");
 }
@@ -384,6 +409,9 @@ void loop() {
         serialOutput = true;
         rngScene.setKeyReadyState(rngHash);
     }
+
+    // --- BLE printer state machine ---
+    printer.update();
 
     // --- CardGFX frame (input, tick, draw, push to screen) ---
     CardGFX::tick();
