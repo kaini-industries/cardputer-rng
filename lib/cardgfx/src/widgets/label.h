@@ -54,8 +54,8 @@ public:
         case Align::Right:  x = (int16_t)m_bounds.w - (int16_t)tw - 1; break;
         }
 
-        // Vertically center text (5x7 font height * scale)
-        int16_t y = ((int16_t)m_bounds.h - 7 * scale) / 2;
+        // Vertically center text
+        int16_t y = ((int16_t)m_bounds.h - FONT_CHAR_H * scale) / 2;
         if (y < 0) y = 0;
 
         canvas.drawText(x, y, m_text, fg, scale);

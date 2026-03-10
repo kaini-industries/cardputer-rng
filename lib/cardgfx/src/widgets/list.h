@@ -95,7 +95,7 @@ public:
                         m_focused ? theme.borderFocus : theme.border);
 
         uint8_t scale = theme.fontScaleMd;
-        uint8_t rowH = m_itemHeight > 0 ? m_itemHeight : (7 * scale + 4);
+        uint8_t rowH = m_itemHeight > 0 ? m_itemHeight : (FONT_CHAR_H * scale + 4);
         uint8_t visible = (m_bounds.h - 2) / rowH;
 
         for (uint8_t i = 0; i < visible && (m_scrollOffset + i) < m_itemCount; i++) {
@@ -114,7 +114,7 @@ public:
                           ? theme.bgPrimary : theme.fgPrimary;
 
             int16_t textX = 3;
-            int16_t textY = y + (rowH - 7 * scale) / 2;
+            int16_t textY = y + (rowH - FONT_CHAR_H * scale) / 2;
 
             if (m_showIndex) {
                 char indexBuf[8];

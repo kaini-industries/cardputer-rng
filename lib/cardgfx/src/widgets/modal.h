@@ -104,19 +104,19 @@ public:
         // Title
         if (m_title[0]) {
             canvas.drawText(textX, textY, m_title, theme.accent, scale);
-            textY += 7 * scale + 4;
+            textY += FONT_CHAR_H * scale + 4;
             canvas.drawHLine(dx + 2, textY - 2, dw - 4, theme.divider);
         }
 
         // Message
         if (m_message[0]) {
             canvas.drawText(textX, textY, m_message, theme.fgPrimary, scale);
-            textY += 7 * scale + 2;
+            textY += FONT_CHAR_H * scale + 2;
         }
 
         // Buttons
         if (m_buttonCount > 0) {
-            textY = dy + dh - 7 * scale - 8;
+            textY = dy + dh - FONT_CHAR_H * scale - 8;
             uint16_t btnSpacing = 4;
             uint16_t totalBtnW = 0;
 
@@ -130,7 +130,7 @@ public:
 
             for (uint8_t i = 0; i < m_buttonCount; i++) {
                 uint16_t btnW = canvas.textWidth(m_buttons[i].label, scale) + 8;
-                uint16_t btnH = 7 * scale + 4;
+                uint16_t btnH = FONT_CHAR_H * scale + 4;
 
                 if (i == m_selectedButton) {
                     canvas.fillRect(btnX, textY, btnW, btnH, theme.accent);

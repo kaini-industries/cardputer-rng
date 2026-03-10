@@ -137,24 +137,29 @@ void loop() {
         keyHexStr.reserve(256 * 3);
         rngStr.reserve(256);
         bigBinStr.reserve(256 * 8);
-        otpStr.reserve(256 * 2);
+        otpStr.reserve(256 * 3);
 
-        int digitCount = 0;
+        int pairCount = 0;
         char hexBuf[4];
+        char otpBuf[4];
         for (size_t i = 0; i < sizeof(rngKey); ++i) {
             int keyItemInt = static_cast<int>(rngKey[i]);
             // Build hex string
             snprintf(hexBuf, sizeof(hexBuf), "%02X ", rngKey[i]);
             keyHexStr += hexBuf;
-            // Build normalized digit string + OTP in single pass
-            if (keyItemInt > NORM_THRESHOLD - 1) continue;
-            int normalized = static_cast<int>(floorf((static_cast<float>(keyItemInt) / NORM_DIVISOR) * NORM_RANGE));
-            char digitChar = '0' + normalized;
-            rngStr += digitChar;
+            // BINARY: all bytes (unfiltered, like HEX)
             bigBinStr += std::bitset<8>(rngKey[i]).to_string();
-            if (digitCount > 0 && digitCount % 2 == 0) otpStr += ' ';
-            otpStr += digitChar;
-            digitCount++;
+            // Skip bytes >= threshold (keeps uniform distribution for DIGITS/OTP)
+            if (keyItemInt > NORM_THRESHOLD - 1) continue;
+            // DIGITS: single digit 0-9
+            int digitValue = static_cast<int>(floorf((static_cast<float>(keyItemInt) / NORM_DIVISOR) * NORM_RANGE));
+            rngStr += ('0' + digitValue);
+            // OTP: two-digit pair 00-49
+            int pairValue = static_cast<int>(floorf((static_cast<float>(keyItemInt) / NORM_DIVISOR) * OTP_RANGE));
+            if (pairCount > 0) otpStr += ' ';
+            snprintf(otpBuf, sizeof(otpBuf), "%02d", pairValue);
+            otpStr += otpBuf;
+            pairCount++;
         }
 
         // Compute SHA256 fingerprint for status bar

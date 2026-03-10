@@ -61,7 +61,7 @@ public:
         canvas.drawRect(0, 0, m_bounds.w, m_bounds.h, borderColor);
 
         uint8_t scale = theme.fontScaleMd;
-        int16_t textY = ((int16_t)m_bounds.h - 7 * scale) / 2;
+        int16_t textY = ((int16_t)m_bounds.h - FONT_CHAR_H * scale) / 2;
         int16_t textX = 2;
 
         bool empty = (m_buffer[0] == '\0');

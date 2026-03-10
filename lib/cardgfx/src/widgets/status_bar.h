@@ -54,7 +54,7 @@ public:
         canvas.fill(bg);
 
         uint8_t scale = theme.fontScaleSm;
-        int16_t textY = ((int16_t)m_bounds.h - 7 * scale) / 2;
+        int16_t textY = ((int16_t)m_bounds.h - FONT_CHAR_H * scale) / 2;
         if (textY < 0) textY = 0;
 
         // Left

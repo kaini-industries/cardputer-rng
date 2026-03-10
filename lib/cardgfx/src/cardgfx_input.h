@@ -165,7 +165,7 @@ public:
 
 private:
     // Event ring buffer
-    static constexpr uint8_t EVENT_QUEUE_SIZE = 16;
+    static constexpr uint8_t EVENT_QUEUE_SIZE = 32;
     InputEvent m_eventQueue[EVENT_QUEUE_SIZE] = {};
     uint8_t    m_eventHead = 0;
     uint8_t    m_eventTail = 0;

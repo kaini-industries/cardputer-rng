@@ -207,8 +207,8 @@ void Canvas::clearDirty() {
 
 bool Canvas::clipRect(int16_t& x, int16_t& y, uint16_t& w, uint16_t& h) const {
     if (x >= m_width || y >= m_height) return false;
-    if (x < 0) { w += x; x = 0; }
-    if (y < 0) { h += y; y = 0; }
+    if (x < 0) { if ((uint16_t)(-x) >= w) return false; w += x; x = 0; }
+    if (y < 0) { if ((uint16_t)(-y) >= h) return false; h += y; y = 0; }
     if (x + w > m_width)  w = m_width - x;
     if (y + h > m_height) h = m_height - y;
     return w > 0 && h > 0;
@@ -256,7 +256,7 @@ void Canvas::drawRect(int16_t x, int16_t y, uint16_t w, uint16_t h,
 
 void Canvas::drawHLine(int16_t x, int16_t y, uint16_t len, uint16_t color) {
     if (!m_buffer || y < 0 || y >= m_height) return;
-    if (x < 0) { len += x; x = 0; }
+    if (x < 0) { if ((uint16_t)(-x) >= len) return; len += x; x = 0; }
     if (x + len > m_width) len = m_width - x;
     if (len == 0) return;
 
@@ -267,7 +267,7 @@ void Canvas::drawHLine(int16_t x, int16_t y, uint16_t len, uint16_t color) {
 
 void Canvas::drawVLine(int16_t x, int16_t y, uint16_t len, uint16_t color) {
     if (!m_buffer || x < 0 || x >= m_width) return;
-    if (y < 0) { len += y; y = 0; }
+    if (y < 0) { if ((uint16_t)(-y) >= len) return; len += y; y = 0; }
     if (y + len > m_height) len = m_height - y;
     if (len == 0) return;
 
@@ -315,7 +315,7 @@ void Canvas::fillCircle(int16_t cx, int16_t cy, int16_t r, uint16_t color) {
         int16_t py = cy + dy;
         if (py < 0 || py >= m_height) continue;
         // Compute horizontal span from circle equation
-        int16_t dx = (int16_t)sqrtf((float)(r * r - dy * dy));
+        int16_t dx = (int16_t)sqrtf((float)((int32_t)r * r - (int32_t)dy * dy));
         int16_t x0 = cx - dx;
         int16_t x1 = cx + dx;
         if (x0 < 0) x0 = 0;
@@ -376,9 +376,9 @@ void Canvas::drawText(int16_t x, int16_t y, const char* text,
                        uint16_t color, uint8_t scale) {
     if (!m_buffer || !text) return;
     int16_t startX = x;
-    const uint8_t charW = 5;
-    const uint8_t charH = 7;
-    const uint8_t spacing = 1;
+    const uint8_t charW = FONT_CHAR_W;
+    const uint8_t charH = FONT_CHAR_H;
+    const uint8_t spacing = FONT_SPACING;
 
     while (*text) {
         char c = *text++;

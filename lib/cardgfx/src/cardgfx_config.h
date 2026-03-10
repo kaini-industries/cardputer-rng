@@ -9,6 +9,9 @@ namespace CardGFX {
 constexpr uint16_t SCREEN_W              = 240;
 constexpr uint16_t SCREEN_H              = 135;
 constexpr uint8_t  COLOR_DEPTH           = 16;   // RGB565
+constexpr uint8_t  FONT_CHAR_W           = 5;
+constexpr uint8_t  FONT_CHAR_H           = 7;
+constexpr uint8_t  FONT_SPACING          = 1;
 
 // ── Canvas Pool ──────────────────────────────────────────────────
 // Max number of canvases that can be alive at once.

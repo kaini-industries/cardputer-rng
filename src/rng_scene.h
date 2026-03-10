@@ -29,6 +29,7 @@ enum class DisplayMode { OTP, DIGITS, HEX_VIEW, BINARY };
 static constexpr int NORM_THRESHOLD = 250;
 static constexpr float NORM_DIVISOR = 250.0f;
 static constexpr int NORM_RANGE = 10;
+static constexpr int OTP_RANGE  = 50;
 
 // Matrix rain animation state
 static constexpr int RAIN_COLS = 40;
@@ -67,6 +68,7 @@ static void drawWrappedText(Canvas& canvas, int16_t x, int16_t y,
 
     for (size_t i = 0; i < len && curY + lineH <= y + maxH; ) {
         size_t lineLen = (len - i < (size_t)cols) ? (len - i) : (size_t)cols;
+        if (lineLen > sizeof(lineBuf) - 1) lineLen = sizeof(lineBuf) - 1;
         memcpy(lineBuf, text + i, lineLen);
         lineBuf[lineLen] = '\0';
         canvas.drawText(x, curY, lineBuf, color, scale);
