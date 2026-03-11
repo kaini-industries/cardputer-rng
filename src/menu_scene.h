@@ -24,10 +24,14 @@ public:
 
         menuList.setBounds({0, 12, SCREEN_W, SCREEN_H - 12});
         menuList.addItem("Generate Key");
+        menuList.addItem("Flip a Coin");
         menuList.setOnSelect([](uint8_t index, const char* text) {
             switch (index) {
                 case 0:
                     CardGFX::scenes().pushByName("rng", Transition::SlideLeft);
+                    break;
+                case 1:
+                    CardGFX::scenes().pushByName("coin", Transition::SlideLeft);
                     break;
             }
         });

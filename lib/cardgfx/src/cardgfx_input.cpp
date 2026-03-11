@@ -83,9 +83,9 @@ void InputManager::poll() {
                 switch (keyCode) {
                     case '`': case '~': nav = Key::ESCAPE; break;
                     case ';': case ':': nav = Key::UP;     break;
-                    case '\'': case '"': nav = Key::DOWN;  break;
+                    case '.': case '>': nav = Key::DOWN;   break;
                     case ',': case '<': nav = Key::LEFT;   break;
-                    case '.': case '>': nav = Key::RIGHT;  break;
+                    case '/': case '?': nav = Key::RIGHT;  break;
                 }
                 if (nav != Key::NONE) {
                     keyCode = nav;
