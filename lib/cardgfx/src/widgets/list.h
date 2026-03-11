@@ -140,7 +140,15 @@ public:
     bool onInput(const InputEvent& event) override {
         if (!event.isDown() && !event.isRepeat()) return false;
 
-        switch (event.key) {
+        uint8_t k = event.key;
+
+        // Allow ; , . / as arrow shortcuts without FN
+        if (k == ';' || k == ':') k = Key::UP;
+        else if (k == '.' || k == '>') k = Key::DOWN;
+        else if (k == ',' || k == '<') k = Key::LEFT;
+        else if (k == '/' || k == '?') k = Key::RIGHT;
+
+        switch (k) {
         case Key::UP:
             if (m_selected > 0) {
                 m_selected--;

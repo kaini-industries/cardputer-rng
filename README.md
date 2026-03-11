@@ -9,6 +9,7 @@ A hardware true random number generator and cryptographic key display for the M5
 - **IMU entropy mixing** -- accelerometer and gyroscope data continuously hashed into the entropy pool
 - **4 display modes** -- OTP pairs, normalized digits, hex dump, binary
 - **SHA256 key fingerprint** displayed in the status bar for visual verification
+- **Coin flip** -- true random coin toss using hardware RNG
 - **Menu-driven UI** built on the custom CardGFX framework
 - **Serial output** of generated keys in all formats
 
@@ -43,13 +44,22 @@ pio device monitor
 ### Navigation
 
 1. **Boot** -- the device starts at the main menu
-2. Select **Generate Key** and press **ENTER**
+2. Select **Generate Key** or **Flip a Coin** and press **ENTER**
+
+**Generate Key:**
+
 3. The entropy collection screen appears with a Matrix rain animation
 4. **Shake the device** to accelerate entropy gathering (IMU data is mixed into the pool)
 5. Once enough entropy is collected, the key is generated automatically
 6. Use **SPACE** to cycle through display modes
 7. Press **ENTER** to reset and generate a new key
 8. Press **ESC** to return to the menu
+
+**Flip a Coin:**
+
+3. Press **ENTER** to flip -- displays a random Heads or Tails result
+4. Press **ENTER** again to flip another coin
+5. Press **ESC** to return to the menu
 
 ### Key Bindings
 
@@ -66,6 +76,14 @@ pio device monitor
 |-----|--------|
 | SPACE | Cycle display mode: OTP -> Digits -> Hex -> Binary |
 | ENTER | Reset entropy and generate a new key |
+| P | Print key via BLE printer |
+| ESC | Return to menu |
+
+**Coin Flip:**
+
+| Key | Action |
+|-----|--------|
+| ENTER | Flip the coin |
 | ESC | Return to menu |
 
 ### Display Modes
@@ -129,6 +147,7 @@ From the 256 raw random bytes:
 ├── src/
 │   ├── main.cpp               # Entry point: setup, loop, RNG state machine
 │   ├── rng_scene.h            # Entropy collection + key display scene
+│   ├── coin_scene.h           # Coin flip scene
 │   └── menu_scene.h           # Main menu scene
 ├── lib/
 │   ├── cardgfx/               # Custom UI framework
