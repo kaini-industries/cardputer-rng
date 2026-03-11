@@ -1,6 +1,6 @@
-# Cardputer RNG
+# Cardputer ADV RNG
 
-A hardware true random number generator and cryptographic key display for the M5Stack Cardputer (ESP32-S3). Generates 256-byte (2048-bit) keys from multiple physical entropy sources and displays them in four formats on the built-in 240x135 TFT screen.
+A hardware true random number generator and cryptographic key display for the M5Stack Cardputer ADV (ESP32-S3). Generates 256-byte (2048-bit) keys from multiple physical entropy sources and displays them in four formats on the built-in 240x135 TFT screen.
 
 ## Features
 

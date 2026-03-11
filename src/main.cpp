@@ -32,6 +32,7 @@ bool keyRngHashReady = false;
 bool resetRng = false;
 byte rngKey[KEY_SIZE];
 bool serialOutput = false;
+bool printEnabled = false;
 
 // Persistent strings (built once per key generation)
 std::string rngStr;

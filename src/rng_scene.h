@@ -25,6 +25,7 @@ extern std::string rngStr;
 extern std::string otpStr;
 extern std::string bigBinStr;
 extern std::string keyHexStr;
+extern bool printEnabled;
 
 // --- Display state ---
 enum class DisplayMode { OTP, DIGITS, HEX_VIEW, BINARY };
@@ -174,7 +175,7 @@ public:
                 updateKeyDisplayWidgets();
                 return true;
             }
-            if (event.key == 'p' || event.key == 'P') {
+            if (printEnabled && (event.key == 'p' || event.key == 'P')) {
                 if (printer.isReady()) {
                     const char* data = nullptr;
                     const char* title = nullptr;
@@ -248,12 +249,14 @@ public:
             }
 
             // Printer status overlay
-            const char* printerStatus = printer.statusText();
-            if (printerStatus) {
-                int16_t sw = strlen(printerStatus) * 6;
-                int16_t sx = (SCREEN_W - sw) / 2;
-                fb.fillRect(sx - 2, 112, sw + 4, 10, theme.bgPrimary);
-                fb.drawText(sx, 112, printerStatus, theme.fgSecondary, 1);
+            if (printEnabled) {
+                const char* printerStatus = printer.statusText();
+                if (printerStatus) {
+                    int16_t sw = strlen(printerStatus) * 6;
+                    int16_t sx = (SCREEN_W - sw) / 2;
+                    fb.fillRect(sx - 2, 112, sw + 4, 10, theme.bgPrimary);
+                    fb.drawText(sx, 112, printerStatus, theme.fgSecondary, 1);
+                }
             }
         }
     }
@@ -274,7 +277,9 @@ public:
             topBar.setLeft(fp);
         }
         entropyLabel.setVisible(false);
-        hintLabel.setText("[ENT]Reset [SPC]View [P]rint [G0]Menu");
+        hintLabel.setText(printEnabled
+            ? "[ENT]Reset [SPC]View [P]rint [G0]Menu"
+            : "[ENT]Reset [SPC]View [G0]Menu");
         hintLabel.setVisible(true);
         updateKeyDisplayWidgets();
     }
