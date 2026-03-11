@@ -10,8 +10,12 @@
 #include <bitset>
 #include <string>
 #include <cstdlib>
+#include "ble_printer.h"
 
 using namespace CardGFX;
+
+// --- BLE Printer ---
+BlePrinter printer;
 
 // --- Crypto / RNG ---
 SHA256 hashMachine;
@@ -101,6 +105,9 @@ void setup() {
         CardGFX::tick();
     }
 
+    // Initialize BLE printer support
+    printer.init();
+
     Serial.println("BOOT OK");
 }
 
@@ -173,6 +180,9 @@ void loop() {
         serialOutput = true;
         rngScene.setKeyReadyState(rngHash);
     }
+
+    // --- BLE printer state machine ---
+    printer.update();
 
     // --- CardGFX frame (input, tick, draw, push to screen) ---
     CardGFX::tick();

@@ -7,8 +7,11 @@
 #include <RNG.h>
 #include <cstdlib>
 #include <cstring>
+#include "ble_printer.h"
 
 using namespace CardGFX;
+
+extern BlePrinter printer;
 
 // --- Shared RNG state (defined in main.cpp) ---
 extern SHA256 hashMachine;
@@ -171,6 +174,22 @@ public:
                 updateKeyDisplayWidgets();
                 return true;
             }
+            if (event.key == 'p' || event.key == 'P') {
+                if (printer.isReady()) {
+                    const char* data = nullptr;
+                    const char* title = nullptr;
+                    switch (displayMode) {
+                        case DisplayMode::OTP:      data = otpStr.c_str();    title = "OTP Key";    break;
+                        case DisplayMode::DIGITS:   data = rngStr.c_str();    title = "Digits";     break;
+                        case DisplayMode::HEX_VIEW: data = keyHexStr.c_str(); title = "Hex Key";    break;
+                        case DisplayMode::BINARY:   data = bigBinStr.c_str(); title = "Binary Key"; break;
+                    }
+                    printer.print(data, title);
+                } else if (printer.state() == BlePrinter::State::Idle) {
+                    printer.scanAndConnect();
+                }
+                return true;
+            }
         }
         return false;
     }
@@ -227,6 +246,15 @@ public:
                                     bigBinStr.c_str(), theme.success, 1);
                     break;
             }
+
+            // Printer status overlay
+            const char* printerStatus = printer.statusText();
+            if (printerStatus) {
+                int16_t sw = strlen(printerStatus) * 6;
+                int16_t sx = (SCREEN_W - sw) / 2;
+                fb.fillRect(sx - 2, 112, sw + 4, 10, theme.bgPrimary);
+                fb.drawText(sx, 112, printerStatus, theme.fgSecondary, 1);
+            }
         }
     }
 
@@ -246,7 +274,7 @@ public:
             topBar.setLeft(fp);
         }
         entropyLabel.setVisible(false);
-        hintLabel.setText("[ENT]Reset [SPC]View [G0]Menu");
+        hintLabel.setText("[ENT]Reset [SPC]View [P]rint [G0]Menu");
         hintLabel.setVisible(true);
         updateKeyDisplayWidgets();
     }
