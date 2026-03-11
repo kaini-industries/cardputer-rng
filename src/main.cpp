@@ -53,10 +53,12 @@ static void stirFloat(float value) {
 // --- Scenes ---
 #include "rng_scene.h"
 #include "coin_scene.h"
+#include "dice_scene.h"
 #include "menu_scene.h"
 
 RNGScene rngScene;
 CoinScene coinScene;
+DiceScene diceScene;
 MenuScene menuScene;
 
 // =====================================================================
@@ -94,9 +96,11 @@ void setup() {
     // Setup and register scenes
     rngScene.setup();
     coinScene.setup();
+    diceScene.setup();
     menuScene.setup();
     CardGFX::scenes().registerScene(&rngScene);
     CardGFX::scenes().registerScene(&coinScene);
+    CardGFX::scenes().registerScene(&diceScene);
     CardGFX::scenes().registerScene(&menuScene);
 
     // Push menu as the initial scene
