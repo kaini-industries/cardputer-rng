@@ -9,7 +9,8 @@ A hardware true random number generator and cryptographic key display for the M5
 - **IMU entropy mixing** -- accelerometer and gyroscope data continuously hashed into the entropy pool
 - **4 display modes** -- OTP pairs, normalized digits, hex dump, binary
 - **SHA256 key fingerprint** displayed in the status bar for visual verification
-- **Coin flip** -- true random coin toss using hardware RNG
+- **Coin flip** -- true random coin toss using hardware RNG with animated flip
+- **Dice roller** -- roll d4, d6, d8, d10, d12, d20, or d100 with scramble animation and unbiased rejection sampling
 - **Menu-driven UI** built on the custom CardGFX framework
 - **Serial output** of generated keys in all formats
 
@@ -44,7 +45,7 @@ pio device monitor
 ### Navigation
 
 1. **Boot** -- the device starts at the main menu
-2. Select **Generate Key** or **Flip a Coin** and press **ENTER**
+2. Select **Generate Key**, **Flip a Coin**, or **Roll Dice** and press **ENTER**
 
 **Generate Key:**
 
@@ -57,9 +58,16 @@ pio device monitor
 
 **Flip a Coin:**
 
-3. Press **ENTER** to flip -- displays a random Heads or Tails result
+3. Press **ENTER** to flip -- an animated coin spin reveals a random Heads or Tails result
 4. Press **ENTER** again to flip another coin
 5. Press **ESC** to return to the menu
+
+**Roll Dice:**
+
+3. Select a die type (d4, d6, d8, d10, d12, d20, d100) from the list
+4. The roll plays a number scramble animation before revealing the result
+5. Press **ENTER** to re-roll the same die, or **SPACE** to pick a different die
+6. Press **ESC** to return to die selection, or again to return to the menu
 
 ### Key Bindings
 
@@ -85,6 +93,15 @@ pio device monitor
 |-----|--------|
 | ENTER | Flip the coin |
 | ESC | Return to menu |
+
+**Dice Roller:**
+
+| Key | Action |
+|-----|--------|
+| UP / DOWN | Select die type |
+| ENTER | Roll selected die (or re-roll) |
+| SPACE | Change die type (after rolling) |
+| ESC | Back to die selection / menu |
 
 ### Display Modes
 
@@ -148,6 +165,7 @@ From the 256 raw random bytes:
 │   ├── main.cpp               # Entry point: setup, loop, RNG state machine
 │   ├── rng_scene.h            # Entropy collection + key display scene
 │   ├── coin_scene.h           # Coin flip scene
+│   ├── dice_scene.h           # Dice roller scene (d4–d100)
 │   └── menu_scene.h           # Main menu scene
 ├── lib/
 │   ├── cardgfx/               # Custom UI framework
