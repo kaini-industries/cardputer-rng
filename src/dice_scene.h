@@ -21,9 +21,11 @@ public:
     bool selectingDie = true;
     uint8_t selectedDie = 0;
     uint16_t lastResult = 0;
+    uint8_t animFrames = 0;
 
     static constexpr uint16_t DICE_SIDES[] = {4, 6, 8, 10, 12, 20, 100};
     static constexpr uint8_t NUM_DICE = 7;
+    static constexpr uint8_t ANIM_TOTAL = 15; // ~500ms at 30 FPS
 
     DiceScene() : Scene("dice") {}
 
@@ -65,8 +67,18 @@ public:
         hintLabel.markDirty();
     }
 
+    void onTick(uint32_t dt_ms) override {
+        if (animFrames > 0) {
+            animFrames--;
+            topBar.markDirty(); // force redraw every frame during animation
+        }
+    }
+
     bool onInput(const InputEvent& event) override {
         if (!event.isDown()) return false;
+
+        // Block input during roll animation
+        if (animFrames > 0) return true;
 
         if (event.key == Key::ESCAPE) {
             if (!selectingDie) {
@@ -95,23 +107,34 @@ public:
     void onDrawOverlay(Canvas& fb, const Theme& theme) override {
         if (!hasResult || selectingDie) return;
 
-        // Clear content area (below top bar, above hint)
+        uint16_t sides = DICE_SIDES[selectedDie];
+        bool animating = (animFrames > 0);
+
         fb.fillRect(0, 12, SCREEN_W, SCREEN_H - 23, theme.bgPrimary);
 
-        // Draw result number large and centered
-        char resultStr[8];
-        snprintf(resultStr, sizeof(resultStr), "%u", lastResult);
+        // Pick display number: random scramble during animation, real result after
+        uint16_t displayNum;
+        if (animating) {
+            displayNum = (esp_random() % sides) + 1;
+        } else {
+            displayNum = lastResult;
+        }
 
-        uint8_t scale = (lastResult >= 100) ? 3 : 4;
+        char resultStr[8];
+        snprintf(resultStr, sizeof(resultStr), "%u", displayNum);
+
+        uint8_t scale = (animating || lastResult >= 100) ? 3 : 4;
+
         int16_t tw = fb.textWidth(resultStr, scale);
         int16_t th = 7 * scale; // FONT_CHAR_H * scale
         int16_t tx = (SCREEN_W - tw) / 2;
         int16_t ty = 40;
+
         fb.drawText(tx, ty, resultStr, theme.accent, scale);
 
         // Die type label below the number
         char dieLabel[8];
-        snprintf(dieLabel, sizeof(dieLabel), "d%u", DICE_SIDES[selectedDie]);
+        snprintf(dieLabel, sizeof(dieLabel), "d%u", sides);
         int16_t dlw = fb.textWidth(dieLabel, 2);
         int16_t dlx = (SCREEN_W - dlw) / 2;
         fb.drawText(dlx, ty + th + 10, dieLabel, theme.fgSecondary, 2);
@@ -123,6 +146,7 @@ private:
         lastResult = rollUnbiased(sides);
         hasResult = true;
         selectingDie = false;
+        animFrames = ANIM_TOTAL;
         diceList.setVisible(false);
 
         char dieLabel[8];
