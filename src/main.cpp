@@ -61,9 +61,17 @@ void setup() {
         while (true) delay(1000);
     }
 
-    // Initialize IMU
-    M5.Imu.update();
-    imuData = M5.Imu.getImuData();
+    // Initialize and validate IMU
+    if (!M5.Imu.isEnabled()) {
+        Serial.println("WARNING: IMU not enabled");
+    } else {
+        auto mask = M5.Imu.update();
+        imuData = M5.Imu.getImuData();
+        if (!(mask & m5::IMU_Class::sensor_mask_accel))
+            Serial.println("WARNING: Accel not reporting");
+        if (!(mask & m5::IMU_Class::sensor_mask_gyro))
+            Serial.println("WARNING: Gyro not reporting");
+    }
 
     // Initialize RNG
     RNG.begin("CardputerRNG v1");
@@ -98,7 +106,7 @@ void setup() {
 
 void loop() {
     // --- IMU + RNG (runs every frame regardless of scene) ---
-    M5.Imu.update();
+    auto imuMask = M5.Imu.update();
     imuData = M5.Imu.getImuData();
 
     if (resetRng) {
@@ -108,13 +116,17 @@ void loop() {
 
     RNG.loop();
 
-    // Stir IMU data into entropy pool
-    stirFloat(imuData.accel.x);
-    stirFloat(imuData.accel.y);
-    stirFloat(imuData.accel.z);
-    stirFloat(imuData.gyro.x);
-    stirFloat(imuData.gyro.y);
-    stirFloat(imuData.gyro.z);
+    // Stir IMU data into entropy pool (only axes with fresh data)
+    if (imuMask & m5::IMU_Class::sensor_mask_accel) {
+        stirFloat(imuData.accel.x);
+        stirFloat(imuData.accel.y);
+        stirFloat(imuData.accel.z);
+    }
+    if (imuMask & m5::IMU_Class::sensor_mask_gyro) {
+        stirFloat(imuData.gyro.x);
+        stirFloat(imuData.gyro.y);
+        stirFloat(imuData.gyro.z);
+    }
 
     // --- Process key (runs once per generation) ---
     if (keyReady && !keyRngHashReady) {

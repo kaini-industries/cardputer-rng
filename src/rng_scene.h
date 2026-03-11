@@ -244,7 +244,7 @@ public:
             topBar.setLeft(fp);
         }
         entropyLabel.setVisible(false);
-        hintLabel.setText("[ENT]Reset [SPC]View [ESC]Menu");
+        hintLabel.setText("[ENT]Reset [SPC]View [G0]Menu");
         hintLabel.setVisible(true);
         updateKeyDisplayWidgets();
     }

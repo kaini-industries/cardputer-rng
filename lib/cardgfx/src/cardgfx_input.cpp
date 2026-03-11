@@ -22,8 +22,41 @@ void InputManager::poll() {
     // Update the M5 stack
     M5Cardputer.update();
 
-    // No keyboard change — keep current state, skip event generation
-    if (!M5Cardputer.Keyboard.isChange()) return;
+    // Track BtnA (G0 side button) state for ESC
+    bool btnAHeld = M5Cardputer.BtnA.isHolding() || M5Cardputer.BtnA.wasPressed();
+    bool btnAPressed = M5Cardputer.BtnA.wasPressed();
+    bool btnAReleased = M5Cardputer.BtnA.wasReleased();
+
+    // No keyboard change — only process BtnA events
+    if (!M5Cardputer.Keyboard.isChange()) {
+        // Maintain BtnA ESC state even when keyboard is idle
+        if (btnAHeld) setKeyState(Key::ESCAPE, true);
+
+        if (btnAPressed) {
+            InputEvent evt;
+            evt.type = EventType::KeyDown;
+            evt.key = Key::ESCAPE;
+            evt.character = 0;
+            evt.modifiers = Mod::NONE;
+            pushEvent(evt);
+            m_repeatKey = Key::ESCAPE;
+            m_repeatTime = millis();
+            m_repeatActive = false;
+        } else if (btnAReleased) {
+            setKeyState(Key::ESCAPE, false);
+            InputEvent evt;
+            evt.type = EventType::KeyUp;
+            evt.key = Key::ESCAPE;
+            evt.character = 0;
+            evt.modifiers = Mod::NONE;
+            pushEvent(evt);
+            if (m_repeatKey == Key::ESCAPE) {
+                m_repeatKey = Key::NONE;
+                m_repeatActive = false;
+            }
+        }
+        return;
+    }
 
     // Clear current state only when we have new data
     memset(m_keyCurrent, 0, sizeof(m_keyCurrent));
@@ -42,6 +75,24 @@ void InputManager::poll() {
             if (key == 0) continue;
 
             uint8_t keyCode = (uint8_t)key;
+            char    ch      = key;
+
+            // FN + key → navigation (Cardputer has no arrow/ESC keys)
+            if (modifiers & Mod::FN) {
+                uint8_t nav = Key::NONE;
+                switch (keyCode) {
+                    case '`': case '~': nav = Key::ESCAPE; break;
+                    case ';': case ':': nav = Key::UP;     break;
+                    case '\'': case '"': nav = Key::DOWN;  break;
+                    case ',': case '<': nav = Key::LEFT;   break;
+                    case '.': case '>': nav = Key::RIGHT;  break;
+                }
+                if (nav != Key::NONE) {
+                    keyCode = nav;
+                    ch = 0;
+                }
+            }
+
             setKeyState(keyCode, true);
 
             // Generate key down event if this is a new press
@@ -49,7 +100,7 @@ void InputManager::poll() {
                 InputEvent evt;
                 evt.type = EventType::KeyDown;
                 evt.key = keyCode;
-                evt.character = (key >= 32 && key < 127) ? (char)key : 0;
+                evt.character = (ch >= 32 && ch < 127) ? ch : 0;
                 evt.modifiers = modifiers;
                 pushEvent(evt);
 
@@ -91,6 +142,24 @@ void InputManager::poll() {
                 }
             }
         }
+    }
+
+    // Preserve BtnA ESC state after keyboard memset
+    if (btnAHeld) {
+        setKeyState(Key::ESCAPE, true);
+        if (btnAPressed) {
+            InputEvent evt;
+            evt.type = EventType::KeyDown;
+            evt.key = Key::ESCAPE;
+            evt.character = 0;
+            evt.modifiers = Mod::NONE;
+            pushEvent(evt);
+            m_repeatKey = Key::ESCAPE;
+            m_repeatTime = millis();
+            m_repeatActive = false;
+        }
+    } else if (btnAReleased) {
+        setKeyState(Key::ESCAPE, false);
     }
 
     // Generate KeyUp events for keys that were held last frame but not now
